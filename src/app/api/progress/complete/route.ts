@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
+import { query } from '@/lib/db';
+
+interface ProgressRow { day_number: number }
+
+export async function POST(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { day } = await req.json();
+  if (!day || day < 1 || day > 40) {
+    return NextResponse.json({ error: 'Invalid day' }, { status: 400 });
+  }
+
+  const existing = await query<ProgressRow>(
+    `SELECT day_number FROM daily_progress WHERE user_id=$1 AND day_number=$2`,
+    [session.userId, day]
+  );
+
+  if (existing.length) {
+    return NextResponse.json({ success: true, alreadyDone: true });
+  }
+
+  await query(
+    `INSERT INTO daily_progress (user_id, day_number) VALUES ($1, $2)`,
+    [session.userId, day]
+  );
+
+  const progress = await query<ProgressRow>(
+    `SELECT day_number FROM daily_progress WHERE user_id=$1`,
+    [session.userId]
+  );
+
+  return NextResponse.json({ success: true, totalCompleted: progress.length });
+}
