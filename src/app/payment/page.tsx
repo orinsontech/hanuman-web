@@ -3,35 +3,24 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
-  }
-}
-
-interface RazorpayOptions {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  image: string;
-  order_id: string;
-  handler: (response: RazorpayResponse) => void;
-  prefill: { name: string; contact: string };
-  theme: { color: string };
-  modal: { ondismiss: () => void };
-}
-
-interface RazorpayInstance { open(): void }
-interface RazorpayResponse {
-  razorpay_order_id: string;
-  razorpay_payment_id: string;
-  razorpay_signature: string;
-}
+import { QRCodeSVG } from 'qrcode.react';
 
 interface User { name: string | null; phone: string; is_paid: boolean }
+
+const WHATSAPP_LINK = 'https://wa.me/919776307793';
+
+function buildUpiParams(phone: string) {
+  return `pa=9090525328-2@ybl&pn=SOCIAL%20SCALAR&mc=0000&mode=02&purpose=00&am=199&cu=INR&tn=${phone}`;
+}
+
+function buildUpiApps(params: string) {
+  return [
+    { name: 'Google Pay', link: `tez://upi/pay?${params}`, logo: '/upi/gpay.png' },
+    { name: 'PhonePe', link: `phonepe://pay?${params}`, logo: '/upi/phonepe.png' },
+    { name: 'Paytm', link: `paytmmp://pay?${params}`, logo: '/upi/paytm.png' },
+    { name: 'BHIM UPI', link: `bhim://upi/pay?${params}`, logo: '/upi/bhim.png' },
+  ];
+}
 
 const includes = [
   { icon: '🎵', text: '40 दिन की हनुमान चालीसा स्तुति' },
@@ -46,8 +35,7 @@ export default function PaymentPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState(false);
-  const [error, setError] = useState('');
+  const [claimed, setClaimed] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me').then(async (r) => {
@@ -59,74 +47,17 @@ export default function PaymentPage() {
     });
   }, [router]);
 
-  function loadRazorpayScript(): Promise<boolean> {
-    return new Promise((resolve) => {
-      if (window.Razorpay) { resolve(true); return; }
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  }
-
-  async function handlePay() {
-    setError('');
-    setPaying(true);
-    try {
-      const loaded = await loadRazorpayScript();
-      if (!loaded) throw new Error('Razorpay load नहीं हो सका। Internet check करें।');
-
-      const orderRes = await fetch('/api/payment/create-order', { method: 'POST' });
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) throw new Error(orderData.error || 'Order create नहीं हो सका');
-      if (orderData.alreadyPaid) { router.replace('/dashboard'); return; }
-
-      const options: RazorpayOptions = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'हनुमान स्तुति साधना',
-        description: '40 दिन की साधना — मनोकामना पूर्ति',
-        image: '/hanuman-hero.jpg',
-        order_id: orderData.orderId,
-        handler: async (response: RazorpayResponse) => {
-          const verifyRes = await fetch('/api/payment/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(response),
-          });
-          const verifyData = await verifyRes.json();
-          if (verifyData.success) {
-            router.push('/dashboard?payment=success');
-          } else {
-            setError('Payment verify नहीं हो सका। Support से संपर्क करें।');
-            setPaying(false);
-          }
-        },
-        prefill: {
-          name: user?.name || '',
-          contact: user?.phone ? `+91${user.phone}` : '',
-        },
-        theme: { color: '#E85D04' },
-        modal: { ondismiss: () => setPaying(false) },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'कुछ गड़बड़ हुई');
-      setPaying(false);
-    }
-  }
-
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF8F0' }}>
         <div className="text-5xl animate-float">🙏</div>
       </div>
     );
   }
+
+  const upiParams = buildUpiParams(user.phone);
+  const upiLink = `upi://pay?${upiParams}`;
+  const upiApps = buildUpiApps(upiParams);
 
   return (
     <div className="min-h-screen" style={{ background: '#FFF8F0' }}>
@@ -144,7 +75,7 @@ export default function PaymentPage() {
         <div className="grid md:grid-cols-2 gap-8 items-start">
 
           {/* Left — What you get */}
-          <div>
+          <div className="order-2 md:order-1">
             <div className="bg-white rounded-2xl shadow-md border border-orange-100 p-6 mb-5">
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0">
@@ -190,72 +121,123 @@ export default function PaymentPage() {
           </div>
 
           {/* Right — Payment card */}
-          <div className="sticky top-6">
-            <div className="bg-white rounded-3xl shadow-2xl border-2 border-orange-200 overflow-hidden">
-              {/* Price header */}
-              <div className="text-center py-7 px-6 relative overflow-hidden"
-                style={{ background: 'linear-gradient(135deg,#1A0500,#7C2D12,#C2410C)' }}>
-                <div className="absolute inset-0 opacity-10 text-[100px] flex items-center justify-center leading-none select-none">🚩</div>
-                <p className="text-orange-200 text-sm mb-2 relative z-10">40 दिन की पूरी साधना सिर्फ</p>
-                <div className="relative z-10">
-                  <div className="flex items-start justify-center gap-1">
-                    <span className="text-yellow-300 font-bold text-2xl mt-2">₹</span>
-                    <span className="text-white font-bold text-7xl leading-none">199</span>
-                  </div>
-                  <p className="text-orange-300 text-xs mt-1">एकमुश्त भुगतान — कोई मासिक शुल्क नहीं</p>
+          <div className="order-1 md:order-2 md:sticky md:top-6">
+            <div className="rounded-3xl shadow-2xl overflow-hidden" style={{ background: 'linear-gradient(165deg,#2B0B08,#1A0500)', border: '1px solid rgba(251,191,36,0.15)' }}>
+              {/* Brand header */}
+              <div className="flex items-center gap-3 px-6 pt-6 pb-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                  style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}>
+                  🚩
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm leading-tight">हनुमान स्तुति</p>
+                  <p className="text-orange-300 text-[10px] tracking-widest font-semibold">साधना पैकेज</p>
                 </div>
               </div>
 
-              <div className="p-6">
-                {/* Value callout */}
-                <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-5 flex items-center gap-2">
-                  <span className="text-green-600 text-lg flex-shrink-0">✅</span>
-                  <p className="text-green-800 text-sm font-medium">
-                    40 दिन × ₹5 से भी कम — एक चाय की कीमत पर जीवन बदलें
+              {claimed ? (
+                <div className="text-center px-6 pb-6">
+                  <div className="text-5xl mb-4">🙏</div>
+                  <h3 className="font-bold text-white text-lg mb-2">जानकारी मिल गई है!</h3>
+                  <p className="text-orange-200/80 text-sm leading-relaxed mb-5">
+                    आपका अकाउंट <strong className="text-white">2 घंटे के अंदर</strong> activate हो जाएगा। हम आपसे जल्द ही contact करेंगे।
+                    <br /><br />
+                    <strong className="text-red-400">कृपया दोबारा Payment न करें।</strong>
                   </p>
+                  <a
+                    href={WHATSAPP_LINK}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-green-500 text-white px-5 py-3 rounded-xl font-semibold text-sm hover:bg-green-600 transition-colors"
+                  >
+                    💬 WhatsApp करें: +91 97763 07793
+                  </a>
                 </div>
-
-                {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-red-700 text-sm flex items-start gap-2">
-                    <span>⚠️</span><span>{error}</span>
+              ) : (
+                <>
+                  {/* Amount */}
+                  <div className="mx-6 mb-5 rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <p className="text-orange-300/70 text-[10px] tracking-widest font-semibold mb-1">कुल राशि</p>
+                    <div className="flex items-end gap-1">
+                      <span className="text-yellow-300 text-xl font-bold">₹</span>
+                      <span className="text-white text-4xl font-bold leading-none">199</span>
+                    </div>
+                    <p className="text-orange-300/70 text-xs mt-1">UPI से भुगतान</p>
                   </div>
-                )}
 
-                <button
-                  onClick={handlePay}
-                  disabled={paying}
-                  className="w-full text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] disabled:opacity-60 disabled:scale-100 disabled:cursor-not-allowed mb-4"
-                  style={{ background: paying ? '#9CA3AF' : 'linear-gradient(135deg,#E85D04,#F48C06)' }}
-                >
-                  {paying ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Payment खुल रही है...
-                    </span>
-                  ) : '🚩 ₹199 में साधना शुरू करें'}
-                </button>
+                  {/* QR code */}
+                  <div className="flex flex-col items-center px-6 mb-4">
+                    <div className="bg-white p-3 rounded-2xl shadow-lg mb-3">
+                      <QRCodeSVG value={upiLink} size={200} level="M" />
+                    </div>
+                    <p className="text-orange-200/60 text-xs text-center">Google Pay, PhonePe या किसी भी UPI App से Scan करें</p>
+                  </div>
 
-                {/* Payment methods */}
-                <div className="text-center mb-4">
-                  <p className="text-xs text-amber-500 mb-2">सभी तरीकों से भुगतान करें</p>
-                  <div className="flex justify-center gap-2 flex-wrap">
-                    {['UPI', 'GPay', 'PhonePe', 'Paytm', 'Card', 'NetBanking'].map((m) => (
-                      <span key={m} className="text-xs bg-amber-50 border border-amber-200 text-amber-700 px-2 py-1 rounded-md font-medium">{m}</span>
+                  {/* Divider */}
+                  <div className="flex items-center gap-3 px-6 mb-4">
+                    <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
+                    <span className="text-orange-300/50 text-[10px] tracking-widest font-semibold">या App में खोलें</span>
+                    <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
+                  </div>
+
+                  {/* App rows */}
+                  <div className="px-6 grid grid-cols-2 gap-2 mb-2">
+                    {upiApps.map((app) => (
+                      <a
+                        key={app.name}
+                        href={app.link}
+                        className="flex items-center gap-2.5 rounded-xl p-3 transition-colors hover:bg-white/5"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                      >
+                        <span className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
+                          <Image src={app.logo} alt={app.name} width={36} height={36} className="object-contain w-full h-full" />
+                        </span>
+                        <span>
+                          <p className="text-white text-xs font-semibold leading-tight">{app.name}</p>
+                          <p className="text-white/40 text-[10px] leading-tight">खोलने के लिए Tap करें</p>
+                        </span>
+                      </a>
                     ))}
                   </div>
-                </div>
 
-                {/* Trust */}
-                <div className="border-t border-orange-100 pt-4 space-y-2">
-                  {[
-                    '🔒 100% सुरक्षित Razorpay द्वारा',
-                    '📞 कोई समस्या? Support से संपर्क करें',
-                    '✅ तुरंत एक्सेस — Payment के बाद',
-                  ].map((t) => (
-                    <p key={t} className="text-xs text-amber-600 flex items-center gap-1.5">{t}</p>
-                  ))}
-                </div>
-              </div>
+                  {/* Any UPI app */}
+                  <div className="px-6 mb-5">
+                    <a
+                      href={upiLink}
+                      className="flex items-center gap-2.5 rounded-xl p-3 transition-colors hover:bg-white/5"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    >
+                      <span className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
+                        <Image src="/upi/upi-other.jpg" alt="किसी भी UPI App" width={36} height={36} className="object-contain w-full h-full" />
+                      </span>
+                      <span className="flex-1">
+                        <p className="text-white text-xs font-semibold leading-tight">कोई भी UPI App</p>
+                        <p className="text-white/40 text-[10px] leading-tight">App चुनने का विकल्प खुलेगा</p>
+                      </span>
+                      <span className="text-white/40">→</span>
+                    </a>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="mx-6 mb-4 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
+
+                  {/* I have paid */}
+                  <div className="px-6 mb-5">
+                    <button
+                      onClick={() => setClaimed(true)}
+                      className="w-full text-white py-3.5 rounded-xl font-bold text-sm shadow-lg transition-all hover:scale-[1.02]"
+                      style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
+                    >
+                      ✓ मैंने Payment कर दिया है
+                    </button>
+                  </div>
+
+                  {/* Footer */}
+                  <p className="text-center text-white/30 text-[10px] tracking-widest font-semibold pb-5">
+                    🔒 सुरक्षित · UPI द्वारा संचालित
+                  </p>
+                </>
+              )}
             </div>
 
             <p className="text-center text-xs text-amber-500 mt-4 font-devanagari">

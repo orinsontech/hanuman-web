@@ -187,7 +187,7 @@ const faqs = [
   },
   {
     q: 'Payment सुरक्षित है?',
-    a: 'हाँ, 100% सुरक्षित। भुगतान Razorpay द्वारा प्रोसेस होता है जो India का सबसे trusted payment gateway है। UPI, Credit/Debit Card, NetBanking सभी accepted हैं।',
+    a: 'हाँ, 100% सुरक्षित। भुगतान सीधे UPI के ज़रिए होता है — QR कोड स्कैन करें या किसी भी UPI App (GPay, PhonePe, Paytm) से Pay करें।',
   },
   {
     q: 'सर्टिफिकेट कब मिलेगा?',
@@ -214,7 +214,7 @@ const steps = [
     num: '02',
     icon: '💳',
     title: '₹199 भुगतान करें',
-    desc: 'UPI / Card / NetBanking — एकमुश्त, कोई छुपा शुल्क नहीं',
+    desc: 'QR स्कैन करें या किसी भी UPI App से — एकमुश्त, कोई छुपा शुल्क नहीं',
   },
   {
     num: '03',
@@ -420,7 +420,7 @@ export default function HomePage() {
 
               {/* Trust row */}
               <div className="flex flex-wrap gap-x-5 gap-y-2 justify-center lg:justify-start text-sm text-orange-200">
-                <span>🔒 Razorpay सुरक्षित भुगतान</span>
+                <span>🔒 100% सुरक्षित UPI भुगतान</span>
                 <span>⚡ तुरंत एक्सेस मिलेगा</span>
                 <span>📱 मोबाइल पर चलेगा</span>
               </div>
@@ -725,7 +725,7 @@ export default function HomePage() {
               {
                 icon: '🔒',
                 title: '100% सुरक्षित',
-                desc: 'Razorpay PCI-DSS Certified',
+                desc: 'Direct UPI Transfer',
               },
               {
                 icon: '⚡',
@@ -827,7 +827,7 @@ export default function HomePage() {
                 🚩 अभी ₹199 में शुरू करें
               </Link>
               <p className="text-center text-xs text-amber-500 mt-3">
-                🔒 Razorpay द्वारा सुरक्षित • UPI / Card / NetBanking
+                🔒 100% सुरक्षित • सीधा UPI भुगतान
               </p>
             </div>
           </div>
@@ -963,7 +963,7 @@ export default function HomePage() {
             🚩 ₹199 में साधना शुरू करें
           </Link>
           <p className="text-orange-300 text-sm mt-6">
-            🔒 Razorpay सुरक्षित &nbsp;•&nbsp; ⚡ तुरंत एक्सेस &nbsp;•&nbsp; 📱
+            🔒 UPI सुरक्षित भुगतान &nbsp;•&nbsp; ⚡ तुरंत एक्सेस &nbsp;•&nbsp; 📱
             मोबाइल पर चलेगा
           </p>
         </div>
