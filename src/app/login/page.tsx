@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-type Step = 'phone' | 'otp';
+type Step = 'phone' | 'name' | 'otp';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,18 +23,7 @@ export default function LoginPage() {
     return () => clearTimeout(t);
   }, [countdown]);
 
-  async function sendOtp(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    if (!name.trim()) {
-      setError('कृपया अपना नाम डालें');
-      return;
-    }
-    if (!/^[6-9]\d{9}$/.test(phone)) {
-      setError('सही 10 अंकों का मोबाइल नंबर डालें');
-      return;
-    }
-    setLoading(true);
+  async function sendOtpRequest() {
     try {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
@@ -48,9 +37,67 @@ export default function LoginPage() {
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'कुछ गड़बड़ हुई, दोबारा कोशिश करें');
+    }
+  }
+
+  async function submitPhone(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      setError('सही 10 अंकों का मोबाइल नंबर डालें');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/check-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'कुछ गड़बड़ हुई');
+      if (data.isPaid) {
+        await sendOtpRequest();
+      } else {
+        setStep('name');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'कुछ गड़बड़ हुई, दोबारा कोशिश करें');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function submitName(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (!name.trim()) {
+      setError('कृपया अपना नाम डालें');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'कुछ गड़बड़ हुई');
+      router.push('/payment');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'कुछ गड़बड़ हुई, दोबारा कोशिश करें');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resendOtp() {
+    setError('');
+    setOtp(['', '', '', '', '', '']);
+    setLoading(true);
+    await sendOtpRequest();
+    setLoading(false);
   }
 
   function handleOtpChange(index: number, value: string) {
@@ -107,10 +154,14 @@ export default function LoginPage() {
         <div className="text-5xl animate-float mb-3 relative z-10">🚩</div>
         <p className="font-devanagari text-yellow-300 text-lg font-bold relative z-10">॥ जय बजरंग बली ॥</p>
         <h1 className="text-2xl font-bold text-white mt-1 relative z-10">
-          {step === 'phone' ? 'साधना में प्रवेश करें' : 'OTP सत्यापित करें'}
+          {step === 'phone' && 'साधना में प्रवेश करें'}
+          {step === 'name' && 'अपना नाम बताएं'}
+          {step === 'otp' && 'OTP सत्यापित करें'}
         </h1>
         <p className="text-orange-200 text-sm mt-1 relative z-10">
-          {step === 'phone' ? 'मोबाइल नंबर डालें और OTP से लॉगिन करें' : `OTP भेजा गया: +91 ${phone}`}
+          {step === 'phone' && 'मोबाइल नंबर डालें'}
+          {step === 'name' && 'साधना ट्रैकिंग के लिए आपका नाम चाहिए'}
+          {step === 'otp' && `OTP भेजा गया: +91 ${phone}`}
         </p>
       </div>
 
@@ -121,21 +172,7 @@ export default function LoginPage() {
 
             <div className="p-8">
               {step === 'phone' ? (
-                <form onSubmit={sendOtp} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-semibold text-orange-900 mb-2">
-                      आपका नाम <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="जैसे: राम प्रसाद शर्मा"
-                      required
-                      className="w-full px-4 py-3.5 rounded-xl border-2 border-orange-100 focus:border-orange-400 focus:outline-none text-orange-900 bg-orange-50/30 transition-colors placeholder-orange-200"
-                    />
-                  </div>
-
+                <form onSubmit={submitPhone} className="space-y-5">
                   <div>
                     <label className="block text-sm font-semibold text-orange-900 mb-2">
                       मोबाइल नंबर <span className="text-red-500">*</span>
@@ -151,6 +188,7 @@ export default function LoginPage() {
                         placeholder="9876543210"
                         maxLength={10}
                         required
+                        autoFocus
                         className="flex-1 px-4 py-3.5 text-orange-900 bg-white focus:outline-none text-xl tracking-[0.2em]"
                       />
                     </div>
@@ -172,14 +210,60 @@ export default function LoginPage() {
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        OTP भेजा जा रहा है...
+                        जाँच की जा रही है...
                       </span>
-                    ) : '🚩 OTP भेजें'}
+                    ) : '🚩 आगे बढ़ें'}
                   </button>
 
                   <p className="text-center text-xs text-amber-600">
                     🔒 आपका नंबर सिर्फ साधना ट्रैकिंग के लिए उपयोग होगा
                   </p>
+                </form>
+              ) : step === 'name' ? (
+                <form onSubmit={submitName} className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-orange-900 mb-2">
+                      आपका नाम <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="जैसे: राम प्रसाद शर्मा"
+                      required
+                      autoFocus
+                      className="w-full px-4 py-3.5 rounded-xl border-2 border-orange-100 focus:border-orange-400 focus:outline-none text-orange-900 bg-orange-50/30 transition-colors placeholder-orange-200"
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm">
+                      <span className="flex-shrink-0 mt-0.5">⚠️</span>
+                      <span>{error}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full text-white py-4 rounded-xl font-bold text-lg shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl disabled:opacity-60 disabled:scale-100 disabled:cursor-not-allowed"
+                    style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        शुरू किया जा रहा है...
+                      </span>
+                    ) : '🚩 साधना शुरू करें'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setStep('phone'); setError(''); }}
+                    className="w-full text-center text-orange-600 font-semibold text-sm hover:underline"
+                  >
+                    ← नंबर बदलें
+                  </button>
                 </form>
               ) : (
                 <form onSubmit={verifyOtp} className="space-y-6">
@@ -234,8 +318,9 @@ export default function LoginPage() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => { setStep('phone'); setOtp(['', '', '', '', '', '']); setError(''); }}
-                        className="text-orange-600 font-semibold text-sm hover:underline"
+                        onClick={resendOtp}
+                        disabled={loading}
+                        className="text-orange-600 font-semibold text-sm hover:underline disabled:opacity-60"
                       >
                         दोबारा OTP भेजें
                       </button>

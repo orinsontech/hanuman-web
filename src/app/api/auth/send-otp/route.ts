@@ -19,21 +19,21 @@ export async function POST(req: NextRequest) {
       [phone, code, expiresAt]
     );
 
-    const smsRes = await fetch('https://ninzasms.in.net/auth/send_sms', {
+    const smsRes = await fetch('https://meraotp.in/api/sendSMS', {
       method: 'POST',
-      headers: {
-        Authorization: process.env.NINZA_SMS_AUTH!,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        sender_id: process.env.NINZA_SMS_SENDER_ID,
-        numbers: phone,
-        rout: 'sms',
-        variables_values: code,
+        apiKey: process.env.MERAOTP_API_KEY,
+        mobileNo: phone,
+        messageType: 'AUTH_OTP',
+        brandName: process.env.MERAOTP_BRAND_NAME,
+        otp: code,
+        senderId: process.env.MERAOTP_SENDER_ID || 'MRAOTP',
       }),
     });
+    const smsData = await smsRes.json();
 
-    if (!smsRes.ok) {
+    if (!smsRes.ok || !smsData.success) {
       return NextResponse.json({ error: 'Failed to send OTP' }, { status: 502 });
     }
 

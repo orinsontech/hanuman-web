@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getSession } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { sendMetaPurchaseEvent } from '@/lib/meta-capi';
 
-interface PaymentRow { id: number; user_id: number }
+interface PaymentRow { id: number; user_id: number; amount: number }
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     // Update payment record
     const payments = await query<PaymentRow>(
-      `SELECT id, user_id FROM payments WHERE razorpay_order_id=$1`,
+      `SELECT id, user_id, amount FROM payments WHERE razorpay_order_id=$1`,
       [razorpay_order_id]
     );
 
@@ -43,6 +44,18 @@ export async function POST(req: NextRequest) {
 
     // Mark user as paid
     await query(`UPDATE users SET is_paid=TRUE WHERE id=$1`, [session.userId]);
+
+    await sendMetaPurchaseEvent({
+      phone: session.phone,
+      value: payments[0].amount / 100,
+      currency: 'INR',
+      eventId: razorpay_payment_id,
+      ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || undefined,
+      userAgent: req.headers.get('user-agent') || undefined,
+      fbp: req.cookies.get('_fbp')?.value,
+      fbc: req.cookies.get('_fbc')?.value,
+      sourceUrl: req.headers.get('referer') || undefined,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {
