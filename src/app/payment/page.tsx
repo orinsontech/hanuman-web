@@ -55,6 +55,11 @@ export default function PaymentPage() {
     );
   }
 
+  async function handleChangeDetails() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+  }
+
   const upiParams = buildUpiParams(user.phone);
   const upiLink = `upi://pay?${upiParams}`;
   const upiApps = buildUpiApps(upiParams);
@@ -69,6 +74,12 @@ export default function PaymentPage() {
         <p className="text-orange-200 text-sm relative z-10 mt-1">
           नमस्ते {user?.name || `+91 ${user?.phone}`} 🙏
         </p>
+        <button
+          onClick={handleChangeDetails}
+          className="text-orange-300 text-xs underline relative z-10 mt-1 hover:text-white transition-colors"
+        >
+          नंबर या नाम बदलें
+        </button>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-10">
