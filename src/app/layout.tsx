@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Poppins, Noto_Sans_Devanagari } from 'next/font/google';
+import FbclidCapture from '@/components/FbclidCapture';
 import './globals.css';
 
 const poppins = Poppins({
@@ -23,7 +24,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="hi" className={`${poppins.variable} ${devanagari.variable}`}>
-      <body className="min-h-screen bg-amber-50 font-sans antialiased">{children}</body>
+      <body className="min-h-screen bg-amber-50 font-sans antialiased">
+        <FbclidCapture />
+        {children}
+      </body>
     </html>
   );
 }

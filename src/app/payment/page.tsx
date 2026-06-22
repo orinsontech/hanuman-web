@@ -235,7 +235,10 @@ export default function PaymentPage() {
                   {/* I have paid */}
                   <div className="px-6 mb-5">
                     <button
-                      onClick={() => setClaimed(true)}
+                      onClick={() => {
+                        setClaimed(true);
+                        fetch('/api/meta/purchase', { method: 'POST' }).catch(() => {});
+                      }}
                       className="w-full text-white py-3.5 rounded-xl font-bold text-sm shadow-lg transition-all hover:scale-[1.02]"
                       style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
                     >
