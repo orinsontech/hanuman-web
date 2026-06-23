@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -8,6 +8,62 @@ interface User { id: number; phone: string; name: string | null; is_paid: boolea
 interface Progress { day_number: number; completed_at: string }
 
 const COOLDOWN_MS = 12 * 60 * 60 * 1000;
+
+function fmt(s: number) {
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+}
+
+function SankalpNiyam() {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  function toggle() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+    } else {
+      audio.play().catch(() => {});
+    }
+    setPlaying(!playing);
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-md border border-orange-100 p-5 mb-6">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={toggle}
+          className="w-12 h-12 flex-shrink-0 text-white rounded-full flex items-center justify-center text-lg shadow-md hover:scale-110 transition-all"
+          style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
+        >
+          {playing ? '⏸' : '▶'}
+        </button>
+        <div className="flex-1">
+          <p className="text-sm font-bold text-orange-900">संकल्प का नियम</p>
+          <p className="text-xs text-amber-500">
+            {fmt(currentTime)} / {duration ? fmt(duration) : '--:--'}
+          </p>
+        </div>
+      </div>
+      <p className="text-xs text-red-600 font-semibold mt-3">
+        ⚠️ पहला दिन का पाठ करने से पहले यह नियम ज़रूर सुनें
+      </p>
+      <audio
+        ref={audioRef}
+        src="/audio/sankalp_ka_nam_jane.mp3"
+        onTimeUpdate={() => {
+          if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
+        }}
+        onLoadedMetadata={() => {
+          if (audioRef.current) setDuration(audioRef.current.duration);
+        }}
+        onEnded={() => setPlaying(false)}
+      />
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -99,6 +155,8 @@ export default function DashboardPage() {
           </h1>
           <p className="text-amber-600 mt-1 text-sm">आपकी 40 दिन की साधना का हाल</p>
         </div>
+
+        <SankalpNiyam />
 
         {/* Progress Card */}
         <div className="bg-white rounded-3xl shadow-lg border border-orange-100 p-6 md:p-8 mb-6">
