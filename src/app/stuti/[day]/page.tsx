@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -65,7 +65,282 @@ function getVerseIndex(t: number) {
   return idx;
 }
 
+// Din jiske liye pre_audio/day_N.mp3 rakha gaya hai — naye din ki recording aane par yahan number jod dena
+const PRE_AUDIO_DAYS = new Set([1, 2, 3]);
+
+const CHALISA_TRACK = { src: '/audio/hanuman-chalisa.mp3', label: 'हनुमान चालीसा' };
+
+// Pehle pre_audio ke baad din-vishesh jo doosra pre-audio sunaana hai
+const PRE_AUDIO_EXTRA: Record<number, { src: string; label: string }> = {
+  1: { src: '/audio/pre_audio/day_1_second.mp3', label: '180 बार श्री राम नाम जप' },
+};
+
+// Chalisa ke baad din-vishesh jo extra stuti sunaani hai
+const POST_AUDIO: Record<number, { src: string; label: string }> = {
+  2: { src: '/audio/hanuman_ashtak.mp3', label: 'हनुमान अष्टक' },
+  3: { src: '/audio/hanuman_ban.mp3', label: 'हनुमान बाण' },
+};
+
+function buildPlaylist(day: number) {
+  const tracks: { src: string; label: string }[] = [];
+  if (PRE_AUDIO_DAYS.has(day)) {
+    tracks.push({ src: `/audio/pre_audio/day_${day}.mp3`, label: 'प्रारंभिक मार्गदर्शन एवं संकल्प विधि' });
+  }
+  if (PRE_AUDIO_EXTRA[day]) tracks.push(PRE_AUDIO_EXTRA[day]);
+  tracks.push(CHALISA_TRACK);
+  if (POST_AUDIO[day]) tracks.push(POST_AUDIO[day]);
+  return tracks;
+}
+
 const COOLDOWN_MS = 12 * 60 * 60 * 1000;
+
+function fmt(s: number) {
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+}
+
+// key={day} se mount hota hai taaki din badalte hi player/listened/marked state fresh ho jaaye
+function DayPractice({ day, alreadyDone }: { day: number; alreadyDone: boolean }) {
+  const router = useRouter();
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [trackIndex, setTrackIndex] = useState(0);
+  const [listened, setListened] = useState(false);
+  const [marked, setMarked] = useState(false);
+  const [marking, setMarking] = useState(false);
+
+  const playlist = useMemo(() => buildPlaylist(day), [day]);
+  const currentTrack = playlist[trackIndex] ?? playlist[0];
+  const isChalisaTrack = currentTrack.src === CHALISA_TRACK.src;
+  const verse = getVerseIndex(currentTime);
+
+  // Track badalne par, agar pehle se play ho raha tha to agla track khud chalao
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio && playing) audio.play().catch(() => {});
+  }, [trackIndex, playing]);
+
+  function togglePlay() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+    } else {
+      audio.play().catch(() => {});
+    }
+    setPlaying(!playing);
+  }
+
+  function handleTimeUpdate() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setCurrentTime(audio.currentTime);
+    if (isChalisaTrack && !listened && audio.currentTime >= Math.min(30, audio.duration * 0.7))
+      setListened(true);
+  }
+
+  function handleTrackEnded() {
+    if (isChalisaTrack) setListened(true);
+    if (trackIndex < playlist.length - 1) {
+      setTrackIndex((i) => i + 1);
+    } else {
+      setPlaying(false);
+    }
+  }
+
+  function handleSeek(e: React.ChangeEvent<HTMLInputElement>) {
+    const t = Number(e.target.value);
+    if (audioRef.current) audioRef.current.currentTime = t;
+    setCurrentTime(t);
+  }
+
+  function goToTrack(index: number) {
+    if (index < 0 || index >= playlist.length) return;
+    setCurrentTime(0);
+    setDuration(0);
+    setTrackIndex(index);
+  }
+
+  async function markComplete() {
+    setMarking(true);
+    try {
+      const res = await fetch('/api/progress/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ day }),
+      });
+      if ((await res.json()).success) {
+        setMarked(true);
+        setTimeout(() => router.push('/dashboard'), 2000);
+      }
+    } finally {
+      setMarking(false);
+    }
+  }
+
+  return (
+    <>
+      {/* Verse */}
+      <div
+        className="rounded-2xl p-6 mb-5 text-white text-center min-h-[90px] flex items-center justify-center"
+        style={{
+          background: 'linear-gradient(135deg,#C2410C,#E85D04,#F48C06)',
+        }}
+      >
+        <p className="font-devanagari text-xl md:text-2xl font-medium leading-relaxed">
+          {isChalisaTrack ? VERSES[verse] : currentTrack.label}
+        </p>
+      </div>
+
+      {/* Player */}
+      <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-6 mb-5">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm text-amber-700 font-medium">
+            {currentTrack.label}
+          </span>
+          <span className="text-sm text-amber-500">
+            {fmt(currentTime)} / {duration ? fmt(duration) : '--:--'}
+          </span>
+        </div>
+
+        <div className="mb-5">
+          <input
+            type="range"
+            min={0}
+            max={duration || 100}
+            value={currentTime}
+            onChange={handleSeek}
+            className="w-full h-2 rounded-full appearance-none cursor-pointer"
+            style={{
+              background: `linear-gradient(to right,#F48C06 ${(currentTime / (duration || 100)) * 100}%,#FDE68A ${(currentTime / (duration || 100)) * 100}%)`,
+            }}
+          />
+        </div>
+
+        <div className="flex items-center justify-center gap-6">
+          <button
+            onClick={() => {
+              if (audioRef.current)
+                audioRef.current.currentTime = Math.max(0, currentTime - 10);
+            }}
+            className="w-10 h-10 flex items-center justify-center text-amber-700 hover:text-orange-600 transition-colors text-xl"
+          >
+            ⏮
+          </button>
+
+          <button
+            onClick={togglePlay}
+            className="w-16 h-16 text-white rounded-full flex items-center justify-center text-2xl shadow-lg hover:shadow-xl transition-all hover:scale-110 animate-glow"
+            style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
+          >
+            {playing ? '⏸' : '▶'}
+          </button>
+
+          <button
+            onClick={() => {
+              if (audioRef.current)
+                audioRef.current.currentTime = Math.min(
+                  duration,
+                  currentTime + 10,
+                );
+            }}
+            className="w-10 h-10 flex items-center justify-center text-amber-700 hover:text-orange-600 transition-colors text-xl"
+          >
+            ⏭
+          </button>
+        </div>
+
+        {playlist.length > 1 && (
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-orange-100">
+            <button
+              onClick={() => goToTrack(trackIndex - 1)}
+              disabled={trackIndex === 0}
+              className="text-xs font-semibold text-amber-600 hover:text-orange-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-left"
+            >
+              ← {playlist[trackIndex - 1]?.label ?? ''}
+            </button>
+            <span className="text-[10px] text-amber-400 flex-shrink-0 px-2">
+              {trackIndex + 1} / {playlist.length}
+            </span>
+            <button
+              onClick={() => goToTrack(trackIndex + 1)}
+              disabled={trackIndex === playlist.length - 1}
+              className="text-xs font-semibold text-amber-600 hover:text-orange-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-right"
+            >
+              {playlist[trackIndex + 1]?.label ?? ''} →
+            </button>
+          </div>
+        )}
+
+        <audio
+          ref={audioRef}
+          src={currentTrack.src}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={() => {
+            if (audioRef.current) setDuration(audioRef.current.duration);
+          }}
+          onEnded={handleTrackEnded}
+        />
+      </div>
+
+      {/* Complete */}
+      <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-6 text-center">
+        {alreadyDone || marked ? (
+          <>
+            <div className="text-5xl mb-3">✅</div>
+            <h3 className="text-xl font-bold text-green-700 mb-1">
+              दिन {day} पूरी हो गई!
+            </h3>
+            <p className="text-amber-700 text-sm mb-4">
+              हनुमान जी की कृपा आप पर बनी रहे
+            </p>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold"
+              style={{
+                background: 'linear-gradient(135deg,#E85D04,#F48C06)',
+              }}
+            >
+              डैशबोर्ड पर जाएं →
+            </Link>
+          </>
+        ) : (
+          <>
+            <div className="text-4xl mb-3">{listened ? '🎉' : '🎵'}</div>
+            <h3 className="text-lg font-bold text-orange-900 mb-2">
+              {listened
+                ? 'धन्यवाद! स्तुति सुनने के लिए शुक्रिया'
+                : 'स्तुति सुनें'}
+            </h3>
+            <p className="text-amber-600 text-sm mb-5">
+              {listened
+                ? 'अब इस दिन को complete mark करें'
+                : 'पहले स्तुति सुनें, फिर complete mark कर सकेंगे'}
+            </p>
+            <button
+              onClick={markComplete}
+              disabled={!listened || marking}
+              className="text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
+              style={{
+                background: 'linear-gradient(135deg,#E85D04,#F48C06)',
+              }}
+            >
+              {marking ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  सेव हो रहा है...
+                </span>
+              ) : (
+                `✅ दिन ${day} Complete करें`
+              )}
+            </button>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
 
 export default function StutiPage() {
   const router = useRouter();
@@ -73,17 +348,8 @@ export default function StutiPage() {
   const dayParam = Number(params.day);
   const day = isNaN(dayParam) || dayParam < 1 || dayParam > 40 ? 1 : dayParam;
 
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [listened, setListened] = useState(false);
-  const [marked, setMarked] = useState(false);
-  const [marking, setMarking] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(false);
-
-  const verse = getVerseIndex(currentTime);
 
   useEffect(() => {
     fetch('/api/auth/me').then((r) => {
@@ -127,52 +393,6 @@ export default function StutiPage() {
     });
   }, [router, day]);
 
-  function togglePlay() {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playing) {
-      audio.pause();
-    } else {
-      audio.play().catch(() => {});
-    }
-    setPlaying(!playing);
-  }
-
-  function handleTimeUpdate() {
-    const audio = audioRef.current;
-    if (!audio) return;
-    setCurrentTime(audio.currentTime);
-    if (!listened && audio.currentTime >= Math.min(30, audio.duration * 0.7))
-      setListened(true);
-  }
-
-  function handleSeek(e: React.ChangeEvent<HTMLInputElement>) {
-    const t = Number(e.target.value);
-    if (audioRef.current) audioRef.current.currentTime = t;
-    setCurrentTime(t);
-  }
-
-  async function markComplete() {
-    setMarking(true);
-    try {
-      const res = await fetch('/api/progress/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ day }),
-      });
-      if ((await res.json()).success) {
-        setMarked(true);
-        setTimeout(() => router.push('/dashboard'), 2000);
-      }
-    } finally {
-      setMarking(false);
-    }
-  }
-
-  function fmt(s: number) {
-    return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-  }
-
   if (!authChecked) {
     return (
       <div
@@ -211,144 +431,7 @@ export default function StutiPage() {
           </p>
         </div>
 
-        {/* Verse */}
-        <div
-          className="rounded-2xl p-6 mb-5 text-white text-center min-h-[90px] flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(135deg,#C2410C,#E85D04,#F48C06)',
-          }}
-        >
-          <p className="font-devanagari text-xl md:text-2xl font-medium leading-relaxed">
-            {VERSES[verse]}
-          </p>
-        </div>
-
-        {/* Player */}
-        <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-6 mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-amber-700 font-medium">
-              हनुमान चालीसा
-            </span>
-            <span className="text-sm text-amber-500">
-              {fmt(currentTime)} / {duration ? fmt(duration) : '--:--'}
-            </span>
-          </div>
-
-          <div className="mb-5">
-            <input
-              type="range"
-              min={0}
-              max={duration || 100}
-              value={currentTime}
-              onChange={handleSeek}
-              className="w-full h-2 rounded-full appearance-none cursor-pointer"
-              style={{
-                background: `linear-gradient(to right,#F48C06 ${(currentTime / (duration || 100)) * 100}%,#FDE68A ${(currentTime / (duration || 100)) * 100}%)`,
-              }}
-            />
-          </div>
-
-          <div className="flex items-center justify-center gap-6">
-            <button
-              onClick={() => {
-                if (audioRef.current)
-                  audioRef.current.currentTime = Math.max(0, currentTime - 10);
-              }}
-              className="w-10 h-10 flex items-center justify-center text-amber-700 hover:text-orange-600 transition-colors text-xl"
-            >
-              ⏮
-            </button>
-
-            <button
-              onClick={togglePlay}
-              className="w-16 h-16 text-white rounded-full flex items-center justify-center text-2xl shadow-lg hover:shadow-xl transition-all hover:scale-110 animate-glow"
-              style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
-            >
-              {playing ? '⏸' : '▶'}
-            </button>
-
-            <button
-              onClick={() => {
-                if (audioRef.current)
-                  audioRef.current.currentTime = Math.min(
-                    duration,
-                    currentTime + 10,
-                  );
-              }}
-              className="w-10 h-10 flex items-center justify-center text-amber-700 hover:text-orange-600 transition-colors text-xl"
-            >
-              ⏭
-            </button>
-          </div>
-
-          <audio
-            ref={audioRef}
-            src="/audio/hanuman-chalisa.mp3"
-            onTimeUpdate={handleTimeUpdate}
-            onLoadedMetadata={() => {
-              if (audioRef.current) setDuration(audioRef.current.duration);
-            }}
-            onEnded={() => {
-              setPlaying(false);
-              setListened(true);
-            }}
-          />
-        </div>
-
-        {/* Complete */}
-        <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-6 text-center">
-          {alreadyDone || marked ? (
-            <>
-              <div className="text-5xl mb-3">✅</div>
-              <h3 className="text-xl font-bold text-green-700 mb-1">
-                दिन {day} पूरी हो गई!
-              </h3>
-              <p className="text-amber-700 text-sm mb-4">
-                हनुमान जी की कृपा आप पर बनी रहे
-              </p>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold"
-                style={{
-                  background: 'linear-gradient(135deg,#E85D04,#F48C06)',
-                }}
-              >
-                डैशबोर्ड पर जाएं →
-              </Link>
-            </>
-          ) : (
-            <>
-              <div className="text-4xl mb-3">{listened ? '🎉' : '🎵'}</div>
-              <h3 className="text-lg font-bold text-orange-900 mb-2">
-                {listened
-                  ? 'धन्यवाद! स्तुति सुनने के लिए शुक्रिया'
-                  : 'स्तुति सुनें'}
-              </h3>
-              <p className="text-amber-600 text-sm mb-5">
-                {listened
-                  ? 'अब इस दिन को complete mark करें'
-                  : 'पहले स्तुति सुनें, फिर complete mark कर सकेंगे'}
-              </p>
-              <button
-                onClick={markComplete}
-                disabled={!listened || marking}
-                className="text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
-                style={{
-                  background: 'linear-gradient(135deg,#E85D04,#F48C06)',
-                }}
-              >
-                {marking ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    सेव हो रहा है...
-                  </span>
-                ) : (
-                  `✅ दिन ${day} Complete करें`
-                )}
-              </button>
-            </>
-          )}
-        </div>
+        <DayPractice key={day} day={day} alreadyDone={alreadyDone} />
 
         {/* Day nav */}
         <div className="flex justify-between mt-5 gap-4">

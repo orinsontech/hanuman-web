@@ -7,11 +7,17 @@ export async function POST(req: NextRequest) {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    const body = await req.json().catch(() => ({}));
+    const eventId =
+      typeof body.eventId === 'string' && body.eventId
+        ? body.eventId
+        : `claim_${session.userId}_${Date.now()}`;
+
     await sendMetaPurchaseEvent({
       phone: session.phone,
       value: 199,
       currency: 'INR',
-      eventId: `claim_${session.userId}_${Date.now()}`,
+      eventId,
       ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || undefined,
       userAgent: req.headers.get('user-agent') || undefined,
       fbp: req.cookies.get('_fbp')?.value,

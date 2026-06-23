@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { QRCodeSVG } from 'qrcode.react';
+import { trackPixelEvent } from '@/lib/fbq';
 
 interface User { name: string | null; phone: string; is_paid: boolean }
 
@@ -237,7 +238,13 @@ export default function PaymentPage() {
                     <button
                       onClick={() => {
                         setClaimed(true);
-                        fetch('/api/meta/purchase', { method: 'POST' }).catch(() => {});
+                        const eventId = `purchase_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                        trackPixelEvent('Purchase', { value: 199, currency: 'INR' }, { eventID: eventId });
+                        fetch('/api/meta/purchase', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ eventId }),
+                        }).catch(() => {});
                       }}
                       className="w-full text-white py-3.5 rounded-xl font-bold text-sm shadow-lg transition-all hover:scale-[1.02]"
                       style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
