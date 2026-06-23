@@ -30,24 +30,70 @@ function SankalpNiyam() {
     setPlaying(!playing);
   }
 
+  function handleSeek(e: React.ChangeEvent<HTMLInputElement>) {
+    const t = Number(e.target.value);
+    if (audioRef.current) audioRef.current.currentTime = t;
+    setCurrentTime(t);
+  }
+
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-orange-100 p-5 mb-6">
-      <div className="flex items-center gap-4">
+    <div
+      className="rounded-2xl shadow-lg p-5 mb-6 animate-glow"
+      style={{
+        background: 'linear-gradient(135deg,#FFF7ED,#FFEDD5)',
+        border: '2px solid #F59E0B',
+      }}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-lg font-bold text-orange-900">संकल्प का नियम</span>
+        <span className="text-sm text-amber-600">
+          {fmt(currentTime)} / {duration ? fmt(duration) : '--:--'}
+        </span>
+      </div>
+
+      <div className="mb-4">
+        <input
+          type="range"
+          min={0}
+          max={duration || 100}
+          value={currentTime}
+          onChange={handleSeek}
+          className="w-full h-2 rounded-full appearance-none cursor-pointer"
+          style={{
+            background: `linear-gradient(to right,#F48C06 ${(currentTime / (duration || 100)) * 100}%,#FDE68A ${(currentTime / (duration || 100)) * 100}%)`,
+          }}
+        />
+      </div>
+
+      <div className="flex items-center justify-center gap-6">
+        <button
+          onClick={() => {
+            if (audioRef.current) audioRef.current.currentTime = Math.max(0, currentTime - 10);
+          }}
+          className="w-10 h-10 flex items-center justify-center text-amber-700 hover:text-orange-600 transition-colors text-xl"
+        >
+          ⏮
+        </button>
+
         <button
           onClick={toggle}
-          className="w-12 h-12 flex-shrink-0 text-white rounded-full flex items-center justify-center text-lg shadow-md hover:scale-110 transition-all"
+          className="w-16 h-16 flex-shrink-0 text-white rounded-full flex items-center justify-center text-2xl shadow-md hover:scale-110 transition-all"
           style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
         >
           {playing ? '⏸' : '▶'}
         </button>
-        <div className="flex-1">
-          <p className="text-sm font-bold text-orange-900">संकल्प का नियम</p>
-          <p className="text-xs text-amber-500">
-            {fmt(currentTime)} / {duration ? fmt(duration) : '--:--'}
-          </p>
-        </div>
+
+        <button
+          onClick={() => {
+            if (audioRef.current) audioRef.current.currentTime = Math.min(duration, currentTime + 10);
+          }}
+          className="w-10 h-10 flex items-center justify-center text-amber-700 hover:text-orange-600 transition-colors text-xl"
+        >
+          ⏭
+        </button>
       </div>
-      <p className="text-xs text-red-600 font-semibold mt-3">
+
+      <p className="text-sm text-red-700 font-bold mt-4 text-center">
         ⚠️ पहला दिन का पाठ करने से पहले यह नियम ज़रूर सुनें
       </p>
       <audio
