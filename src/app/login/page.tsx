@@ -131,7 +131,9 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'OTP गलत है');
-      router.push('/payment');
+      // This step is only reached for already-paid users (see submitPhone) — dashboard
+      // will bounce them to /payment if that ever stops being true.
+      router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'कुछ गड़बड़ हुई');
       setOtp(['', '', '', '', '', '']);
@@ -330,6 +332,7 @@ export default function LoginPage() {
               )}
             </div>
           </div>
+          <p className="text-center text-xs text-amber-500 mt-4">Powered by BhaktiAmrit</p>
         </div>
       </div>
     </div>

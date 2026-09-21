@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { dayLimitFor, PlanId } from '@/lib/plans';
 
 interface ProgressRow { day_number: number }
+interface UserRow { is_paid: boolean; plan: PlanId | null }
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -11,6 +13,14 @@ export async function POST(req: NextRequest) {
   const { day } = await req.json();
   if (!day || day < 1 || day > 40) {
     return NextResponse.json({ error: 'Invalid day' }, { status: 400 });
+  }
+
+  const users = await query<UserRow>(`SELECT is_paid, plan FROM users WHERE id=$1`, [session.userId]);
+  if (!users.length || !users[0].is_paid) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (day > dayLimitFor(users[0].plan)) {
+    return NextResponse.json({ error: 'यह दिन आपके प्लान में शामिल नहीं है' }, { status: 403 });
   }
 
   const existing = await query<ProgressRow>(

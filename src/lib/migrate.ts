@@ -17,6 +17,15 @@ export async function migrate() {
   `);
 
   await query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(10)
+  `);
+
+  // Grandfather pre-existing paid users (from before per-plan pricing) into the full 40-day plan
+  await query(`
+    UPDATE users SET plan='full' WHERE is_paid=TRUE AND plan IS NULL
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS otp_codes (
       id SERIAL PRIMARY KEY,
       phone VARCHAR(15) NOT NULL,
@@ -38,6 +47,10 @@ export async function migrate() {
       status VARCHAR(20) DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT NOW()
     )
+  `);
+
+  await query(`
+    ALTER TABLE payments ADD COLUMN IF NOT EXISTS plan VARCHAR(10) NOT NULL DEFAULT 'full'
   `);
 
   await query(`

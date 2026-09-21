@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { dayLimitFor, PLANS, PlanId } from '@/lib/plans';
 
-interface User { id: number; phone: string; name: string | null; is_paid: boolean }
+interface User { id: number; phone: string; name: string | null; is_paid: boolean; plan: PlanId | null }
 interface Progress { day_number: number; completed_at: string }
 
 const COOLDOWN_MS = 12 * 60 * 60 * 1000;
@@ -116,19 +117,31 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [progress, setProgress] = useState<Progress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [restarting, setRestarting] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => {
-    fetch('/api/auth/me')
+  function loadDashboard() {
+    return fetch('/api/auth/me')
       .then((r) => { if (r.status === 401) { router.push('/login'); return null; } return r.json(); })
       .then((data) => {
         if (!data) return;
         if (!data.user?.is_paid) { router.replace('/payment'); return; }
         setUser(data.user);
         setProgress(data.progress);
-      })
-      .finally(() => setLoading(false));
+      });
+  }
+
+  useEffect(() => {
+    loadDashboard().finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
+  async function handleRestart() {
+    setRestarting(true);
+    const res = await fetch('/api/progress/reset', { method: 'POST' });
+    if (res.ok) await loadDashboard();
+    setRestarting(false);
+  }
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 60000);
@@ -151,12 +164,15 @@ export default function DashboardPage() {
     );
   }
 
+  const dayLimit = dayLimitFor(user?.plan);
   const completedMap = new Map(progress.map((p) => [p.day_number, p.completed_at]));
   const completedDays = new Set(completedMap.keys());
   const totalCompleted = completedDays.size;
-  const isComplete = totalCompleted >= 40;
-  const nextDay = isComplete ? null : Array.from({ length: 40 }, (_, i) => i + 1).find((d) => !completedDays.has(d));
+  const planComplete = totalCompleted >= dayLimit;
+  const fullyComplete = totalCompleted >= 40;
+  const nextDay = planComplete ? null : Array.from({ length: dayLimit }, (_, i) => i + 1).find((d) => !completedDays.has(d));
   const progressPct = Math.round((totalCompleted / 40) * 100);
+  const canRestart = user?.plan ? PLANS[user.plan].canRestart : false;
 
   const prevCompletedAt = nextDay && nextDay > 1 ? completedMap.get(nextDay - 1) : null;
   const unlockAt = prevCompletedAt ? new Date(prevCompletedAt).getTime() + COOLDOWN_MS : 0;
@@ -178,7 +194,7 @@ export default function DashboardPage() {
             <span className="text-sm text-amber-700 hidden sm:block font-medium">
               🙏 {user?.name || `+91 ${user?.phone}`}
             </span>
-            {isComplete && (
+            {fullyComplete && (
               <Link href="/certificate"
                 className="text-white px-4 py-2 rounded-full text-sm font-bold hover:shadow-lg transition-all"
                 style={{ background: 'linear-gradient(135deg,#F59E0B,#E85D04)' }}>
@@ -231,30 +247,47 @@ export default function DashboardPage() {
 
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-2xl font-bold text-orange-900 mb-2">
-                {isComplete ? '🎉 40 दिन पूरे!' : `${totalCompleted} दिन हो गए`}
+                {fullyComplete ? '🎉 40 दिन पूरे!' : planComplete ? `✅ आपके ${dayLimit} दिन पूरे हुए!` : `${totalCompleted} दिन हो गए`}
               </h2>
               <p className="text-amber-700 mb-4">
-                {isComplete
+                {fullyComplete
                   ? 'हनुमान जी की कृपा आप पर सदा बनी रहे। सर्टिफिकेट डाउनलोड करें!'
-                  : `सिर्फ ${40 - totalCompleted} दिन और। हर दिन की स्तुति ज़रूर सुनें।`}
+                  : planComplete
+                    ? 'साधना जारी रखने के लिए अपना प्लान अपग्रेड करें।'
+                    : `सिर्फ ${dayLimit - totalCompleted} दिन और। हर दिन की स्तुति ज़रूर सुनें।`}
               </p>
-              {!isComplete && nextDay && !isNextDayLocked && (
+              {!planComplete && nextDay && !isNextDayLocked && (
                 <Link href={`/stuti/${nextDay}`}
                   className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
                   style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}>
                   ▶ आज की स्तुति सुनें — दिन {nextDay}
                 </Link>
               )}
-              {!isComplete && nextDay && isNextDayLocked && (
+              {!planComplete && nextDay && isNextDayLocked && (
                 <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 px-6 py-3 rounded-full font-bold">
                   🔒 दिन {nextDay} — {hoursRemaining} घंटे {minutesRemaining} मिनट बाद खुलेगा
                 </div>
               )}
-              {isComplete && (
-                <Link href="/certificate"
+              {fullyComplete && (
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link href="/certificate"
+                    className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                    style={{ background: 'linear-gradient(135deg,#F59E0B,#E85D04)' }}>
+                    🏆 सर्टिफिकेट डाउनलोड करें
+                  </Link>
+                  {canRestart && (
+                    <button onClick={handleRestart} disabled={restarting}
+                      className="inline-flex items-center gap-2 text-orange-700 bg-orange-50 border border-orange-200 px-6 py-3 rounded-full font-bold hover:bg-orange-100 transition-all disabled:opacity-60">
+                      {restarting ? 'शुरू हो रहा है...' : '🔄 फिर से शुरू करें'}
+                    </button>
+                  )}
+                </div>
+              )}
+              {planComplete && !fullyComplete && (
+                <Link href="/payment"
                   className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                  style={{ background: 'linear-gradient(135deg,#F59E0B,#E85D04)' }}>
-                  🏆 सर्टिफिकेट डाउनलोड करें
+                  style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}>
+                  🚀 प्लान अपग्रेड करें
                 </Link>
               )}
             </div>
@@ -270,14 +303,24 @@ export default function DashboardPage() {
             {Array.from({ length: 40 }, (_, i) => i + 1).map((day) => {
               const done = completedDays.has(day);
               const isNext = day === nextDay;
-              const locked = !done && (!isNext || isNextDayLocked);
+              const beyondPlan = day > dayLimit;
+              const locked = !done && (!isNext || isNextDayLocked || beyondPlan);
 
               const cell = (
                 <>
-                  <span className="text-base">{done ? '✓' : locked ? '🔒' : day}</span>
+                  <span className="text-base">{done ? '✓' : locked ? (beyondPlan ? '⭐' : '🔒') : day}</span>
                   {done && <span className="text-[9px] opacity-80">दिन {day}</span>}
                 </>
               );
+
+              if (beyondPlan && !done) {
+                return (
+                  <Link key={day} href="/payment"
+                    className="flex flex-col items-center justify-center rounded-xl p-2 h-14 text-xs font-bold day-cell-pending opacity-70 hover:opacity-100 transition-all">
+                    {cell}
+                  </Link>
+                );
+              }
 
               if (locked) {
                 return (
@@ -301,6 +344,9 @@ export default function DashboardPage() {
             <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded day-cell-today inline-block" /> आज का दिन</span>
             <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded day-cell-pending inline-block" /> बाकी है</span>
             <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded day-cell-pending opacity-50 inline-block" /> 🔒 लॉक है</span>
+            {dayLimit < 40 && (
+              <span className="flex items-center gap-1.5"><span className="w-4 h-4 rounded day-cell-pending opacity-70 inline-block" /> ⭐ अपग्रेड करें</span>
+            )}
           </div>
         </div>
 

@@ -194,8 +194,8 @@ const faqs = [
     a: '40 दिन की साधना पूरी करने के तुरंत बाद आप Certificate page पर जाकर अपना digital certificate download कर सकते हैं। इसे print भी कर सकते हैं।',
   },
   {
-    q: '₹199 में क्या-क्या मिलेगा?',
-    a: '₹199 में मिलेगा: 40 दिन की Hanuman Chalisa स्तुति, रोज़ का progress tracker, साधना सम्पन्न digital certificate, और जीवनभर के लिए access। कोई hidden charge नहीं।',
+    q: 'कीमत क्या है?',
+    a: '₹189 में 3-दिन का ट्रायल शुरू करें — पहले 3 दिन की स्तुति और progress tracker मुफ्त आज़माएं। पूरी 40-दिन साधना ₹299 में, और Lifetime access (जब चाहें दोबारा साधना करें) ₹499 में उपलब्ध है। Digital certificate 40 दिन पूरे करने पर मिलता है। कोई hidden charge नहीं।',
   },
   {
     q: 'क्या ये सच में काम करता है?',
@@ -213,8 +213,8 @@ const steps = [
   {
     num: '02',
     icon: '💳',
-    title: '₹199 भुगतान करें',
-    desc: 'QR स्कैन करें या किसी भी UPI App से — एकमुश्त, कोई छुपा शुल्क नहीं',
+    title: '₹189 में ट्रायल शुरू करें',
+    desc: 'UPI, Card या Netbanking से Pay करें — कोई छुपा शुल्क नहीं',
   },
   {
     num: '03',
@@ -244,14 +244,14 @@ export default function HomePage() {
               <span className="font-bold text-orange-800 text-lg leading-none block">
                 हनुमान स्तुति
               </span>
-              <span className="text-[10px] text-orange-500 tracking-widest font-devanagari">
-                जय बजरंग बली
+              <span className="text-[10px] text-orange-500 tracking-widest">
+                <span className="font-devanagari">जय बजरंग बली</span> · by BhaktiAmrit
               </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden sm:flex items-center gap-1.5 text-xs text-orange-700 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-full font-semibold">
-              ₹199 एकमुश्त
+              ₹189 से शुरू
             </span>
             <Link
               href="/login"
@@ -388,15 +388,15 @@ export default function HomePage() {
               {/* Price box */}
               <div className="inline-flex items-center gap-4 bg-white/10 border border-white/20 backdrop-blur-sm px-5 py-3 rounded-2xl mb-6">
                 <div>
-                  <p className="text-orange-300 text-xs">केवल एकमुश्त</p>
-                  <p className="text-white font-bold text-3xl leading-none">₹199</p>
-                  <p className="text-orange-300 text-xs">जीवनभर एक्सेस</p>
+                  <p className="text-orange-300 text-xs">बस</p>
+                  <p className="text-white font-bold text-3xl leading-none">₹189</p>
+                  <p className="text-orange-300 text-xs">से 3-दिन ट्रायल शुरू करें</p>
                 </div>
                 <div className="w-px h-12 bg-white/20" />
                 <ul className="text-left space-y-1">
-                  <li className="text-yellow-300 text-sm">✅ 40 दिन की हनुमान स्तुति</li>
+                  <li className="text-yellow-300 text-sm">✅ 3-दिन ट्रायल स्तुति</li>
                   <li className="text-yellow-300 text-sm">✅ रोज़ Progress Tracker</li>
-                  <li className="text-yellow-300 text-sm">✅ साधना सम्पन्न Certificate</li>
+                  <li className="text-yellow-300 text-sm">✅ बाद में 40-दिन/Lifetime में अपग्रेड करें</li>
                   <li className="text-orange-300 text-xs">❌ कोई छुपा शुल्क नहीं</li>
                 </ul>
               </div>
@@ -408,7 +408,7 @@ export default function HomePage() {
                   className="inline-flex items-center justify-center gap-2 text-white px-8 py-4 rounded-full text-lg font-bold shadow-2xl transition-all hover:scale-105 animate-glow"
                   style={{ background: 'linear-gradient(135deg,#F48C06,#E85D04)' }}
                 >
-                  🚩 ₹199 में साधना शुरू करें
+                  🚩 ₹189 में ट्रायल शुरू करें
                 </Link>
                 <Link
                   href="#manokamna"
@@ -449,7 +449,7 @@ export default function HomePage() {
             { num: '50,000+', label: 'भक्त जुड़े' },
             { num: '40 दिन', label: 'की साधना' },
             { num: '9 तरह', label: 'की मनोकामनाएं' },
-            { num: '₹199', label: 'एकमुश्त शुल्क' },
+            { num: '₹189', label: 'से शुरू' },
           ].map((s) => (
             <div key={s.label} className="text-center px-4 py-2">
               <div className="text-xl md:text-2xl font-bold text-orange-600">
@@ -541,7 +541,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-105"
               style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
             >
-              🙏 अपनी मनोकामना पूरी करें — ₹199 में
+              🙏 अपनी मनोकामना पूरी करें — ₹189 में ट्रायल शुरू करें
             </Link>
           </div>
         </div>
@@ -783,24 +783,24 @@ export default function HomePage() {
                   ₹
                 </span>
                 <span className="text-white text-7xl font-bold leading-none">
-                  199
+                  189
                 </span>
               </div>
               <p className="text-orange-300 text-sm mt-1 relative z-10">
-                एकमुश्त — कोई मासिक शुल्क नहीं
+                3-दिन ट्रायल — बिना किसी जोखिम के शुरू करें
               </p>
             </div>
             <div className="bg-white p-8">
               <div className="grid grid-cols-2 gap-3 mb-7">
                 {[
-                  '40 दिन की हनुमान स्तुति',
+                  '3 दिन की हनुमान स्तुति',
                   'रोज़ का प्रगति ट्रैकर',
-                  'डिजिटल सर्टिफिकेट',
                   'मोबाइल पर कहीं भी',
-                  'एकमुश्त भुगतान',
                   'तुरंत एक्सेस',
                   '9 तरह की मनोकामना',
-                  'जीवनभर का लाभ',
+                  'जब चाहें अपग्रेड करें',
+                  '40-दिन प्लान ₹299 में',
+                  'Lifetime प्लान ₹499 में',
                 ].map((f) => (
                   <div key={f} className="flex items-center gap-2">
                     <span
@@ -824,10 +824,10 @@ export default function HomePage() {
                   background: 'linear-gradient(135deg,#E85D04,#F48C06)',
                 }}
               >
-                🚩 अभी ₹199 में शुरू करें
+                🚩 अभी ₹189 में ट्रायल शुरू करें
               </Link>
               <p className="text-center text-xs text-amber-500 mt-3">
-                🔒 100% सुरक्षित • सीधा UPI भुगतान
+                🔒 100% सुरक्षित भुगतान • UPI, Card, Netbanking
               </p>
             </div>
           </div>
@@ -960,10 +960,10 @@ export default function HomePage() {
             href="/login"
             className="inline-flex items-center gap-3 bg-white text-orange-700 px-10 py-4 rounded-full text-xl font-bold shadow-2xl hover:shadow-orange-500/30 transition-all hover:scale-105"
           >
-            🚩 ₹199 में साधना शुरू करें
+            🚩 ₹189 में ट्रायल शुरू करें
           </Link>
           <p className="text-orange-300 text-sm mt-6">
-            🔒 UPI सुरक्षित भुगतान &nbsp;•&nbsp; ⚡ तुरंत एक्सेस &nbsp;•&nbsp; 📱
+            🔒 सुरक्षित भुगतान &nbsp;•&nbsp; ⚡ तुरंत एक्सेस &nbsp;•&nbsp; 📱
             मोबाइल पर चलेगा
           </p>
         </div>
@@ -981,16 +981,26 @@ export default function HomePage() {
           <p className="text-orange-400 font-devanagari text-lg mb-4">
             हनुमान जी की कृपा से सबका मंगल हो
           </p>
+          <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-xs text-amber-500 mb-4">
+            <a href="mailto:seva@bhaktiamrit.com" className="hover:text-yellow-300 transition-colors underline underline-offset-2">
+              📧 seva@bhaktiamrit.com
+            </a>
+            <span className="text-amber-700">•</span>
+            <a href="https://wa.me/919776307793" target="_blank" rel="noopener noreferrer" className="hover:text-yellow-300 transition-colors underline underline-offset-2">
+              💬 +91 97763 07793 (WhatsApp only)
+            </a>
+          </div>
           <div className="flex justify-center gap-6 text-xs text-amber-600 mb-4">
-            <span>Privacy Policy</span>
+            <Link href="/privacy-policy" className="hover:text-yellow-300 transition-colors underline underline-offset-2">Privacy Policy</Link>
             <span>•</span>
-            <span>Terms & Conditions</span>
+            <Link href="/terms" className="hover:text-yellow-300 transition-colors underline underline-offset-2">Terms & Conditions</Link>
             <span>•</span>
-            <span>Refund Policy</span>
+            <Link href="/refund-policy" className="hover:text-yellow-300 transition-colors underline underline-offset-2">Refund Policy</Link>
           </div>
           <p className="text-xs text-amber-700">
             © 2024 हनुमान स्तुति साधना। सबका मंगल हो।
           </p>
+          <p className="text-xs text-amber-700 mt-1">Powered by BhaktiAmrit</p>
         </div>
       </footer>
     </div>

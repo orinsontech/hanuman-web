@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { dayLimitFor, PlanId } from '@/lib/plans';
 
 const VERSES = [
   'श्रीगुरु चरन सरोज रज, निज मनु मुकुरु सुधारि। बरनउँ रघुबर बिमल जसु, जो दायकु फल चारि॥',
@@ -363,6 +364,12 @@ export default function StutiPage() {
           return;
         }
 
+        const dayLimit = dayLimitFor(data.user.plan as PlanId | null);
+        if (day > dayLimit) {
+          router.replace('/payment');
+          return;
+        }
+
         const completedMap = new Map<number, string>(
           (data.progress || []).map(
             (p: { day_number: number; completed_at: string }) => [p.day_number, p.completed_at],
@@ -375,7 +382,7 @@ export default function StutiPage() {
           return;
         }
 
-        const nextDay = Array.from({ length: 40 }, (_, i) => i + 1).find((d) => !completedMap.has(d)) ?? 41;
+        const nextDay = Array.from({ length: dayLimit }, (_, i) => i + 1).find((d) => !completedMap.has(d)) ?? 41;
         if (day !== nextDay) {
           router.replace('/dashboard');
           return;
