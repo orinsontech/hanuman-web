@@ -9,6 +9,14 @@ export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get('hk_session')?.value;
 
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    const adminToken = req.cookies.get('hk_admin_session')?.value;
+    if (!adminToken) {
+      return NextResponse.redirect(new URL('/admin/login', req.url));
+    }
+    return NextResponse.next();
+  }
+
   if (NEEDS_LOGIN.some((p) => pathname.startsWith(p)) && !token) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
@@ -27,5 +35,6 @@ export const config = {
     '/certificate/:path*',
     '/payment/:path*',
     '/login',
+    '/admin/:path*',
   ],
 };

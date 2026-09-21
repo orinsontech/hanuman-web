@@ -35,8 +35,8 @@ export const PLANS: Record<PlanId, Plan> = {
     id: 'lifetime',
     label: 'Lifetime',
     tagline: 'जीवनभर पहुंच + जितनी बार चाहें दोहराएं',
-    priceRupees: 499,
-    pricePaise: 49900,
+    priceRupees: 1, // TEMP: ₹1 for testing — revert to 499 before real launch
+    pricePaise: 100, // TEMP: revert to 49900 before real launch
     dayLimit: 40,
     canRestart: true,
   },
