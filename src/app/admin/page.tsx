@@ -123,7 +123,7 @@ export default function AdminPaymentsPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Summary cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-2xl shadow-sm border border-orange-100 p-4">
             <p className="text-xs text-amber-600 mb-1">कुल Revenue (filtered)</p>
             <p className="text-2xl font-bold text-orange-900">{rupees(totalRevenue)}</p>
@@ -139,7 +139,10 @@ export default function AdminPaymentsPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-4">
             <p className="text-xs text-amber-600 mb-1">⏳ Pending</p>
             <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
-            {failedCount > 0 && <p className="text-xs text-red-500 mt-0.5">❌ Failed: {failedCount}</p>}
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-red-100 p-4">
+            <p className="text-xs text-amber-600 mb-1">❌ Failed</p>
+            <p className="text-2xl font-bold text-red-600">{failedCount}</p>
           </div>
         </div>
 

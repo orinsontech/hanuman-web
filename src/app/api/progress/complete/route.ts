@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { day } = await req.json();
-  if (!day || day < 1 || day > 40) {
+  if (!day || day < 1 || day > 42) {
     return NextResponse.json({ error: 'Invalid day' }, { status: 400 });
   }
 

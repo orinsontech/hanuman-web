@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { dayLimitFor, PLANS, PlanId } from '@/lib/plans';
+import { dayLimitFor, uiDayLimitFor, PLANS, PlanId } from '@/lib/plans';
 
 interface User { id: number; phone: string; name: string | null; is_paid: boolean; plan: PlanId | null }
 interface Progress { day_number: number; completed_at: string }
@@ -165,12 +165,15 @@ export default function DashboardPage() {
   }
 
   const dayLimit = dayLimitFor(user?.plan);
+  // UI-facing limit: caps the marketed/visible day count at 40 even for plans
+  // whose real dayLimit allows a couple of hidden buffer days beyond that.
+  const uiDayLimit = uiDayLimitFor(user?.plan);
   const completedMap = new Map(progress.map((p) => [p.day_number, p.completed_at]));
   const completedDays = new Set(completedMap.keys());
   const totalCompleted = completedDays.size;
-  const planComplete = totalCompleted >= dayLimit;
+  const planComplete = totalCompleted >= uiDayLimit;
   const fullyComplete = totalCompleted >= 40;
-  const nextDay = planComplete ? null : Array.from({ length: dayLimit }, (_, i) => i + 1).find((d) => !completedDays.has(d));
+  const nextDay = planComplete ? null : Array.from({ length: uiDayLimit }, (_, i) => i + 1).find((d) => !completedDays.has(d));
   const progressPct = Math.round((totalCompleted / 40) * 100);
   const canRestart = user?.plan ? PLANS[user.plan].canRestart : false;
 
@@ -247,14 +250,14 @@ export default function DashboardPage() {
 
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-2xl font-bold text-orange-900 mb-2">
-                {fullyComplete ? '🎉 40 दिन पूरे!' : planComplete ? `✅ आपके ${dayLimit} दिन पूरे हुए!` : `${totalCompleted} दिन हो गए`}
+                {fullyComplete ? '🎉 40 दिन पूरे!' : planComplete ? `✅ आपके ${uiDayLimit} दिन पूरे हुए!` : `${totalCompleted} दिन हो गए`}
               </h2>
               <p className="text-amber-700 mb-4">
                 {fullyComplete
                   ? 'हनुमान जी की कृपा आप पर सदा बनी रहे। सर्टिफिकेट डाउनलोड करें!'
                   : planComplete
                     ? 'साधना जारी रखने के लिए अपना प्लान अपग्रेड करें।'
-                    : `सिर्फ ${dayLimit - totalCompleted} दिन और। हर दिन की स्तुति ज़रूर सुनें।`}
+                    : `सिर्फ ${uiDayLimit - totalCompleted} दिन और। हर दिन की स्तुति ज़रूर सुनें।`}
               </p>
               {!planComplete && nextDay && !isNextDayLocked && (
                 <Link href={`/stuti/${nextDay}`}

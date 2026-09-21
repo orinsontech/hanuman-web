@@ -43,7 +43,15 @@ export async function POST(req: NextRequest) {
     `UPDATE payments SET razorpay_payment_id=$1, razorpay_signature=$2, status='success' WHERE id=$3`,
     [razorpay_payment_id, razorpay_signature, payment.id]
   );
-  await query(`UPDATE users SET is_paid=TRUE, plan=$1 WHERE id=$2`, [payment.plan, session.userId]);
+  // Never downgrade: if the user already upgraded via another order in the meantime
+  // (e.g. two orders created before either was paid), keep their higher plan.
+  await query(
+    `UPDATE users SET is_paid=TRUE, plan=$1 WHERE id=$2
+     AND (plan IS NULL OR
+          (CASE plan WHEN 'trial' THEN 0 WHEN 'full' THEN 1 WHEN 'lifetime' THEN 2 END)
+          < (CASE $1 WHEN 'trial' THEN 0 WHEN 'full' THEN 1 WHEN 'lifetime' THEN 2 END))`,
+    [payment.plan, session.userId]
+  );
 
   sendMetaPurchaseEvent({
     phone: session.phone,

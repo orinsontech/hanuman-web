@@ -62,4 +62,9 @@ export async function migrate() {
       UNIQUE(user_id, day_number)
     )
   `);
+
+  // Widen day_number to 42 — gives 2 hidden buffer/makeup days beyond the
+  // marketed 40. UI and the certificate (still >=40 completed) are unaffected.
+  await query(`ALTER TABLE daily_progress DROP CONSTRAINT IF EXISTS daily_progress_day_number_check`);
+  await query(`ALTER TABLE daily_progress ADD CONSTRAINT daily_progress_day_number_check CHECK (day_number BETWEEN 1 AND 42)`);
 }

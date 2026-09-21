@@ -347,7 +347,7 @@ export default function StutiPage() {
   const router = useRouter();
   const params = useParams();
   const dayParam = Number(params.day);
-  const day = isNaN(dayParam) || dayParam < 1 || dayParam > 40 ? 1 : dayParam;
+  const day = isNaN(dayParam) || dayParam < 1 || dayParam > 42 ? 1 : dayParam;
 
   const [authChecked, setAuthChecked] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(false);
