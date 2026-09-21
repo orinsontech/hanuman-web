@@ -125,7 +125,7 @@ export default function CertificatePage() {
                 <p className="font-devanagari text-amber-800 font-bold text-lg mb-1">
                   ॥ हनुमान जी की कृपा सदा आप पर बनी रहे ॥
                 </p>
-                <p className="text-xs text-amber-400">hanuman.kaama.online</p>
+                <p className="text-xs text-amber-400">bhaktiamrit.org</p>
               </div>
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function CertificatePage() {
               <h3 className="font-bold text-orange-900 mb-1">Share करें</h3>
               <p className="text-sm text-amber-700 mb-3">अपने प्रियजनों के साथ share करें</p>
               <button
-                onClick={() => navigator.share?.({ title: 'मैंने 40 दिन की हनुमान स्तुति साधना पूरी की!', text: `🙏 जय श्री राम! मैंने hanuman.kaama.online पर 40 दिन की साधना पूरी की। आप भी शुरू करें!` })}
+                onClick={() => navigator.share?.({ title: 'मैंने 40 दिन की हनुमान स्तुति साधना पूरी की!', text: `🙏 जय श्री राम! मैंने bhaktiamrit.org पर 40 दिन की साधना पूरी की। आप भी शुरू करें!` })}
                 className="text-white px-4 py-2 rounded-full text-sm font-bold"
                 style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}>
                 🚩 Share करें
