@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Script from 'next/script';
 import { trackPixelEvent } from '@/lib/fbq';
+import { trackGtagEvent } from '@/lib/gtag';
 import { PLAN_ORDER, PLANS, PlanId, planRank, isPlanExpired, DEFAULT_PLAN } from '@/lib/plans';
 
 interface User { name: string | null; phone: string; is_paid: boolean; plan: PlanId | null; plan_expires_at: string | null }
@@ -122,6 +123,11 @@ export default function PaymentPage() {
             { value: order.amount / 100, currency: 'INR' },
             { eventID: `purchase_${response.razorpay_payment_id}` }
           );
+          trackGtagEvent('purchase', {
+            value: order.amount / 100,
+            currency: 'INR',
+            transaction_id: `purchase_${response.razorpay_payment_id}`,
+          });
           setPaid(true);
           setPaying(false);
         },

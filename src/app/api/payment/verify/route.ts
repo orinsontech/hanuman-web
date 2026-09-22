@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { sendMetaPurchaseEvent } from '@/lib/meta-capi';
+import { sendGooglePurchaseEvent, parseGaClientId } from '@/lib/ga4-mp';
 import { PLANS, PlanId, planRankSqlCase } from '@/lib/plans';
 
 interface PaymentRow { id: number; user_id: number; status: string; plan: PlanId; amount: number }
@@ -67,6 +68,13 @@ export async function POST(req: NextRequest) {
     fbp: req.cookies.get('_fbp')?.value,
     fbc: req.cookies.get('_fbc')?.value,
     sourceUrl: req.headers.get('referer') || undefined,
+  }).catch(() => {});
+
+  sendGooglePurchaseEvent({
+    clientId: parseGaClientId(req.cookies.get('_ga')?.value),
+    value: payment.amount / 100,
+    currency: 'INR',
+    eventId: `purchase_${razorpay_payment_id}`,
   }).catch(() => {});
 
   return NextResponse.json({ success: true });
