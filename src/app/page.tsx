@@ -195,7 +195,7 @@ const faqs = [
   },
   {
     q: 'कीमत क्या है?',
-    a: 'पूरी 40-दिन साधना ₹199 में उपलब्ध है। सबसे लोकप्रिय है 1 साल एक्सेस — सिर्फ ₹349 में, पूरे 1 साल जब चाहें साधना करें। जो हमेशा के लिए access चाहते हैं उनके लिए Lifetime access (जब चाहें दोबारा साधना करें) ₹499 में उपलब्ध है। Digital certificate 40 दिन पूरे करने पर मिलता है। कोई hidden charge नहीं।',
+    a: 'सिर्फ ₹199 में पूरी 40-दिन साधना शुरू करें। अगर 1 साल तक जब चाहें साधना करना चाहते हैं तो 1 साल एक्सेस ₹349 में उपलब्ध है, और जो हमेशा के लिए access चाहते हैं उनके लिए Lifetime access (जब चाहें दोबारा साधना करें) ₹499 में उपलब्ध है। Digital certificate 40 दिन पूरे करने पर मिलता है। कोई hidden charge नहीं।',
   },
   {
     q: 'क्या ये सच में काम करता है?',
@@ -213,7 +213,7 @@ const steps = [
   {
     num: '02',
     icon: '💳',
-    title: '₹349 में 1 साल एक्सेस लें',
+    title: '₹199 में साधना शुरू करें',
     desc: 'UPI, Card या Netbanking से Pay करें — कोई छुपा शुल्क नहीं',
   },
   {
@@ -389,14 +389,14 @@ export default function HomePage() {
               <div className="inline-flex items-center gap-4 bg-white/10 border border-white/20 backdrop-blur-sm px-5 py-3 rounded-2xl mb-6">
                 <div>
                   <p className="text-orange-300 text-xs">बस</p>
-                  <p className="text-white font-bold text-3xl leading-none">₹349</p>
-                  <p className="text-orange-300 text-xs">में 1 साल एक्सेस लें</p>
+                  <p className="text-white font-bold text-3xl leading-none">₹199</p>
+                  <p className="text-orange-300 text-xs">में साधना शुरू करें</p>
                 </div>
                 <div className="w-px h-12 bg-white/20" />
                 <ul className="text-left space-y-1">
-                  <li className="text-yellow-300 text-sm">✅ पूरी 40-दिन स्तुति, 1 साल तक</li>
+                  <li className="text-yellow-300 text-sm">✅ पूरी 40-दिन हनुमान स्तुति</li>
                   <li className="text-yellow-300 text-sm">✅ रोज़ Progress Tracker</li>
-                  <li className="text-yellow-300 text-sm">✅ Lifetime में भी अपग्रेड करें</li>
+                  <li className="text-yellow-300 text-sm">✅ 1 साल/Lifetime में भी अपग्रेड करें</li>
                   <li className="text-orange-300 text-xs">❌ कोई छुपा शुल्क नहीं</li>
                 </ul>
               </div>
@@ -408,7 +408,7 @@ export default function HomePage() {
                   className="inline-flex items-center justify-center gap-2 text-white px-8 py-4 rounded-full text-lg font-bold shadow-2xl transition-all hover:scale-105 animate-glow"
                   style={{ background: 'linear-gradient(135deg,#F48C06,#E85D04)' }}
                 >
-                  🚩 ₹349 में 1 साल एक्सेस लें
+                  🚩 ₹199 में साधना शुरू करें
                 </Link>
                 <Link
                   href="#manokamna"
@@ -541,7 +541,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-105"
               style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
             >
-              🙏 अपनी मनोकामना पूरी करें — ₹349 में 1 साल एक्सेस लें
+              🙏 अपनी मनोकामना पूरी करें — ₹199 में साधना शुरू करें
             </Link>
           </div>
         </div>
@@ -786,11 +786,11 @@ export default function HomePage() {
                   ₹
                 </span>
                 <span className="text-white text-7xl font-bold leading-none">
-                  349
+                  199
                 </span>
               </div>
               <p className="text-orange-300 text-sm mt-1 relative z-10">
-                1 साल एक्सेस — पूरे साल जब चाहें साधना करें
+                पूरी 40-दिन साधना — एक बार में पूरा एक्सेस
               </p>
             </div>
             <div className="bg-white p-8">
@@ -801,8 +801,8 @@ export default function HomePage() {
                   'मोबाइल पर कहीं भी',
                   'तुरंत एक्सेस',
                   '9 तरह की मनोकामना',
-                  '1 साल तक वैध',
-                  '40-दिन प्लान ₹199 में',
+                  'सर्टिफिकेट पूरा होने पर',
+                  '1 साल एक्सेस ₹349 में',
                   'Lifetime प्लान ₹499 में',
                 ].map((f) => (
                   <div key={f} className="flex items-center gap-2">
@@ -827,7 +827,7 @@ export default function HomePage() {
                   background: 'linear-gradient(135deg,#E85D04,#F48C06)',
                 }}
               >
-                🚩 अभी ₹349 में 1 साल एक्सेस लें
+                🚩 अभी ₹199 में साधना शुरू करें
               </Link>
               <p className="text-center text-xs text-amber-500 mt-3">
                 🔒 100% सुरक्षित भुगतान • UPI, Card, Netbanking
@@ -963,7 +963,7 @@ export default function HomePage() {
             href="/login"
             className="inline-flex items-center gap-3 bg-white text-orange-700 px-10 py-4 rounded-full text-xl font-bold shadow-2xl hover:shadow-orange-500/30 transition-all hover:scale-105"
           >
-            🚩 ₹349 में 1 साल एक्सेस लें
+            🚩 ₹199 में साधना शुरू करें
           </Link>
           <p className="text-orange-300 text-sm mt-6">
             🔒 सुरक्षित भुगतान &nbsp;•&nbsp; ⚡ तुरंत एक्सेस &nbsp;•&nbsp; 📱
