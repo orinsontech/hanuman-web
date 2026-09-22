@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { getRazorpay } from '@/lib/razorpay';
-import { PLANS, PlanId, isValidPlan, planRank } from '@/lib/plans';
+import { PLANS, PlanId, isValidPlan, isPlanExpired, planRank } from '@/lib/plans';
 
-interface UserRow { id: number; is_paid: boolean; plan: PlanId | null }
+interface UserRow { id: number; is_paid: boolean; plan: PlanId | null; plan_expires_at: string | null }
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -16,15 +16,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
   }
 
-  const users = await query<UserRow>(`SELECT id, is_paid, plan FROM users WHERE id=$1`, [session.userId]);
+  const users = await query<UserRow>(`SELECT id, is_paid, plan, plan_expires_at FROM users WHERE id=$1`, [session.userId]);
   if (!users.length) return NextResponse.json({ error: 'User not found' }, { status: 404 });
   const currentPlan = users[0].plan;
+  const isRenewal = planId === currentPlan && isPlanExpired(users[0].plan_expires_at);
 
-  if (planRank(planId) <= planRank(currentPlan)) {
+  if (planRank(planId) <= planRank(currentPlan) && !isRenewal) {
     return NextResponse.json({ error: 'यह प्लान आपके पास पहले से है' }, { status: 409 });
   }
 
-  const amount = currentPlan
+  const amount = currentPlan && !isRenewal
     ? PLANS[planId].pricePaise - PLANS[currentPlan].pricePaise
     : PLANS[planId].pricePaise;
 

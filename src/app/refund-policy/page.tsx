@@ -9,7 +9,7 @@ export default function RefundPolicyPage() {
     <LegalPage title="रिफंड नीति" updatedOn="22 सितंबर 2026">
       <section className="rounded-xl border-2 border-red-200 bg-red-50 p-4">
         <p className="font-bold text-red-700">
-          ⚠️ कृपया ध्यान दें: हमारी सभी सेवाएं <u>डिजिटल</u> हैं और भुगतान होते ही तुरंत activate हो जाती हैं। इसलिए <strong>किसी भी प्लान (3-दिन ट्रायल, 40-दिन साधना, या Lifetime) पर किसी भी परिस्थिति में कोई रिफंड नहीं दिया जाएगा।</strong>
+          ⚠️ कृपया ध्यान दें: हमारी सभी सेवाएं <u>डिजिटल</u> हैं और भुगतान होते ही तुरंत activate हो जाती हैं। इसलिए <strong>किसी भी प्लान (40-दिन साधना, 1 साल एक्सेस, या Lifetime) पर किसी भी परिस्थिति में कोई रिफंड नहीं दिया जाएगा।</strong>
         </p>
       </section>
 

@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { PlanId } from '@/lib/plans';
+import { PLANS, PlanId, planRankSqlCase } from '@/lib/plans';
 
 interface PaymentRow { id: number; user_id: number; status: string; plan: PlanId }
 
@@ -66,14 +66,18 @@ export async function POST(req: NextRequest) {
     `UPDATE payments SET razorpay_payment_id=$1, status='success' WHERE id=$2`,
     [paymentId, payment.id]
   );
+  const durationDays = PLANS[payment.plan].durationDays;
+  const expiresAt = durationDays ? new Date(Date.now() + durationDays * 86400000) : null;
+
   // Never downgrade: if the user already upgraded via another order in the meantime
-  // (e.g. two orders created before either was paid), keep their higher plan.
+  // (e.g. two orders created before either was paid), keep their higher plan. The
+  // last clause allows renewing the same plan once it has already expired.
   await query(
-    `UPDATE users SET is_paid=TRUE, plan=$1 WHERE id=$2
-     AND (plan IS NULL OR
-          (CASE plan WHEN 'trial' THEN 0 WHEN 'full' THEN 1 WHEN 'lifetime' THEN 2 END)
-          < (CASE $1 WHEN 'trial' THEN 0 WHEN 'full' THEN 1 WHEN 'lifetime' THEN 2 END))`,
-    [payment.plan, payment.user_id]
+    `UPDATE users SET is_paid=TRUE, plan=$1, plan_expires_at=$2 WHERE id=$3
+     AND (plan IS NULL
+          OR ${planRankSqlCase('plan')} < ${planRankSqlCase('$1')}
+          OR (plan = $1 AND plan_expires_at IS NOT NULL AND plan_expires_at < NOW()))`,
+    [payment.plan, expiresAt, payment.user_id]
   );
 
   return NextResponse.json({ success: true });

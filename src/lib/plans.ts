@@ -1,4 +1,4 @@
-export type PlanId = 'trial' | 'full' | 'lifetime';
+export type PlanId = 'trial' | 'full' | 'yearly' | 'lifetime';
 
 export interface Plan {
   id: PlanId;
@@ -8,9 +8,17 @@ export interface Plan {
   pricePaise: number;
   dayLimit: number;
   canRestart: boolean;
+  // Days after purchase until access lapses. null = never expires.
+  durationDays: number | null;
 }
 
-export const PLAN_ORDER: PlanId[] = ['trial', 'full', 'lifetime'];
+// 'trial' is retired: kept out of PLAN_ORDER so it can never be purchased
+// or ranked as an upgrade target again, but its entry in PLANS below stays
+// populated so existing users still on plan='trial' keep working (dayLimitFor,
+// canRestart, etc. all index PLANS[plan] unconditionally in a few places).
+export const PLAN_ORDER: PlanId[] = ['full', 'yearly', 'lifetime'];
+
+export const DEFAULT_PLAN: PlanId = 'yearly';
 
 export const PLANS: Record<PlanId, Plan> = {
   trial: {
@@ -21,6 +29,7 @@ export const PLANS: Record<PlanId, Plan> = {
     pricePaise: 1100,
     dayLimit: 3,
     canRestart: false,
+    durationDays: null,
   },
   full: {
     id: 'full',
@@ -32,15 +41,27 @@ export const PLANS: Record<PlanId, Plan> = {
     // certificate threshold (CERTIFICATE_DAYS) stay at 40 — see uiDayLimitFor.
     dayLimit: 42,
     canRestart: false,
+    durationDays: null,
+  },
+  yearly: {
+    id: 'yearly',
+    label: '1 साल एक्सेस',
+    tagline: '1 साल तक पूरी साधना का उपयोग करें',
+    priceRupees: 349,
+    pricePaise: 34900,
+    dayLimit: 42,
+    canRestart: false,
+    durationDays: 365,
   },
   lifetime: {
     id: 'lifetime',
     label: 'Lifetime',
     tagline: 'जीवनभर पहुंच + जितनी बार चाहें दोहराएं',
-    priceRupees: 349,
-    pricePaise: 34900,
+    priceRupees: 499,
+    pricePaise: 49900,
     dayLimit: 42,
     canRestart: true,
+    durationDays: null,
   },
 };
 
@@ -69,4 +90,21 @@ export function planRank(id: PlanId | null | undefined): number {
 export function dayLimitFor(id: PlanId | null | undefined): number {
   if (!id) return 0;
   return PLANS[id].dayLimit;
+}
+
+export function isPlanExpired(expiresAt: string | Date | null | undefined): boolean {
+  if (!expiresAt) return false;
+  return new Date(expiresAt).getTime() < Date.now();
+}
+
+// Builds a `CASE column WHEN 'id' THEN rank ... END` SQL fragment from
+// PLAN_ORDER, so the two payment routes never hand-duplicate this map again.
+// Plans retired from PLAN_ORDER (e.g. 'trial') fall through to their
+// planRank() value (-1) automatically, instead of an unmatched CASE
+// silently evaluating to SQL NULL.
+export function planRankSqlCase(column: string): string {
+  const whens = Object.keys(PLANS)
+    .map((id) => `WHEN '${id}' THEN ${planRank(id as PlanId)}`)
+    .join(' ');
+  return `(CASE ${column} ${whens} END)`;
 }

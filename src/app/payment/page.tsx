@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Script from 'next/script';
 import { trackPixelEvent } from '@/lib/fbq';
-import { PLAN_ORDER, PLANS, PlanId, planRank } from '@/lib/plans';
+import { PLAN_ORDER, PLANS, PlanId, planRank, isPlanExpired, DEFAULT_PLAN } from '@/lib/plans';
 
-interface User { name: string | null; phone: string; is_paid: boolean; plan: PlanId | null }
+interface User { name: string | null; phone: string; is_paid: boolean; plan: PlanId | null; plan_expires_at: string | null }
 
 const WHATSAPP_LINK = 'https://wa.me/919776307793';
 
@@ -33,7 +33,7 @@ export default function PaymentPage() {
   const [paying, setPaying] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [error, setError] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>('full');
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>(DEFAULT_PLAN);
 
   useEffect(() => {
     fetch('/api/auth/me').then(async (r) => {
@@ -41,8 +41,11 @@ export default function PaymentPage() {
       const data = await r.json();
       if (data.user?.plan === 'lifetime') { router.replace('/dashboard'); return; }
       setUser(data.user);
-      const availablePlans = PLAN_ORDER.filter((id) => planRank(id) > planRank(data.user?.plan));
-      setSelectedPlan(availablePlans.includes('full') ? 'full' : availablePlans[0]);
+      const expired = isPlanExpired(data.user?.plan_expires_at);
+      const availablePlans = PLAN_ORDER.filter(
+        (id) => planRank(id) > planRank(data.user?.plan) || (id === data.user?.plan && expired)
+      );
+      setSelectedPlan(availablePlans.includes(DEFAULT_PLAN) ? DEFAULT_PLAN : availablePlans[0]);
       setLoading(false);
     });
   }, [router]);
@@ -56,8 +59,11 @@ export default function PaymentPage() {
   }
 
   const currentPlan = user.plan;
-  const availablePlans = PLAN_ORDER.filter((id) => planRank(id) > planRank(currentPlan));
-  const priceFor = (id: PlanId) => currentPlan ? PLANS[id].pricePaise - PLANS[currentPlan].pricePaise : PLANS[id].pricePaise;
+  const currentPlanExpired = isPlanExpired(user.plan_expires_at);
+  const isRenewal = (id: PlanId) => id === currentPlan && currentPlanExpired;
+  const availablePlans = PLAN_ORDER.filter((id) => planRank(id) > planRank(currentPlan) || isRenewal(id));
+  const priceFor = (id: PlanId) =>
+    currentPlan && !isRenewal(id) ? PLANS[id].pricePaise - PLANS[currentPlan].pricePaise : PLANS[id].pricePaise;
 
   async function handleChangeDetails() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -237,7 +243,11 @@ export default function PaymentPage() {
                   {/* Plan selector */}
                   {currentPlan && (
                     <p className="mx-6 mb-3 text-orange-200/70 text-xs">
-                      आपके पास अभी <strong className="text-white">{PLANS[currentPlan].label}</strong> है — अपग्रेड करें:
+                      {currentPlanExpired ? (
+                        <>आपका <strong className="text-white">{PLANS[currentPlan].label}</strong> प्लान समाप्त हो गया है — नवीनीकरण करें:</>
+                      ) : (
+                        <>आपके पास अभी <strong className="text-white">{PLANS[currentPlan].label}</strong> है — अपग्रेड करें:</>
+                      )}
                     </p>
                   )}
                   <div className="mx-6 mb-5 flex flex-col gap-2.5">
@@ -260,7 +270,7 @@ export default function PaymentPage() {
                             <div>
                               <p className="text-white font-bold text-sm flex items-center gap-2">
                                 {plan.label}
-                                {id === 'full' && (
+                                {id === DEFAULT_PLAN && (
                                   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: '#E85D04' }}>
                                     लोकप्रिय
                                   </span>
@@ -270,7 +280,7 @@ export default function PaymentPage() {
                             </div>
                             <div className="text-right flex-shrink-0">
                               <p className="text-white font-bold text-xl leading-none">₹{price / 100}</p>
-                              {currentPlan && <p className="text-orange-200/50 text-[10px] mt-1">अपग्रेड मूल्य</p>}
+                              {currentPlan && !isRenewal(id) && <p className="text-orange-200/50 text-[10px] mt-1">अपग्रेड मूल्य</p>}
                             </div>
                           </div>
                         </button>

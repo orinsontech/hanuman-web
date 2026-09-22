@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { dayLimitFor, PlanId } from '@/lib/plans';
+import { dayLimitFor, isPlanExpired, PlanId } from '@/lib/plans';
 
 const VERSES = [
   'श्रीगुरु चरन सरोज रज, निज मनु मुकुरु सुधारि। बरनउँ रघुबर बिमल जसु, जो दायकु फल चारि॥',
@@ -359,7 +359,7 @@ export default function StutiPage() {
         return;
       }
       r.json().then((data) => {
-        if (!data.user?.is_paid) {
+        if (!data.user?.is_paid || isPlanExpired(data.user?.plan_expires_at)) {
           router.replace('/payment');
           return;
         }

@@ -195,7 +195,7 @@ const faqs = [
   },
   {
     q: 'कीमत क्या है?',
-    a: '₹11 में 3-दिन का ट्रायल शुरू करें — पहले 3 दिन की स्तुति और progress tracker मुफ्त आज़माएं। पूरी 40-दिन साधना ₹199 में, और Lifetime access (जब चाहें दोबारा साधना करें) ₹349 में उपलब्ध है। Digital certificate 40 दिन पूरे करने पर मिलता है। कोई hidden charge नहीं।',
+    a: 'पूरी 40-दिन साधना ₹199 में उपलब्ध है। सबसे लोकप्रिय है 1 साल एक्सेस — सिर्फ ₹349 में, पूरे 1 साल जब चाहें साधना करें। जो हमेशा के लिए access चाहते हैं उनके लिए Lifetime access (जब चाहें दोबारा साधना करें) ₹499 में उपलब्ध है। Digital certificate 40 दिन पूरे करने पर मिलता है। कोई hidden charge नहीं।',
   },
   {
     q: 'क्या ये सच में काम करता है?',
@@ -213,7 +213,7 @@ const steps = [
   {
     num: '02',
     icon: '💳',
-    title: '₹11 में ट्रायल शुरू करें',
+    title: '₹349 में 1 साल एक्सेस लें',
     desc: 'UPI, Card या Netbanking से Pay करें — कोई छुपा शुल्क नहीं',
   },
   {
@@ -251,7 +251,7 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden sm:flex items-center gap-1.5 text-xs text-orange-700 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-full font-semibold">
-              ₹11 से शुरू
+              ₹199 से शुरू
             </span>
             <Link
               href="/login"
@@ -389,14 +389,14 @@ export default function HomePage() {
               <div className="inline-flex items-center gap-4 bg-white/10 border border-white/20 backdrop-blur-sm px-5 py-3 rounded-2xl mb-6">
                 <div>
                   <p className="text-orange-300 text-xs">बस</p>
-                  <p className="text-white font-bold text-3xl leading-none">₹11</p>
-                  <p className="text-orange-300 text-xs">से 3-दिन ट्रायल शुरू करें</p>
+                  <p className="text-white font-bold text-3xl leading-none">₹349</p>
+                  <p className="text-orange-300 text-xs">में 1 साल एक्सेस लें</p>
                 </div>
                 <div className="w-px h-12 bg-white/20" />
                 <ul className="text-left space-y-1">
-                  <li className="text-yellow-300 text-sm">✅ 3-दिन ट्रायल स्तुति</li>
+                  <li className="text-yellow-300 text-sm">✅ पूरी 40-दिन स्तुति, 1 साल तक</li>
                   <li className="text-yellow-300 text-sm">✅ रोज़ Progress Tracker</li>
-                  <li className="text-yellow-300 text-sm">✅ बाद में 40-दिन/Lifetime में अपग्रेड करें</li>
+                  <li className="text-yellow-300 text-sm">✅ Lifetime में भी अपग्रेड करें</li>
                   <li className="text-orange-300 text-xs">❌ कोई छुपा शुल्क नहीं</li>
                 </ul>
               </div>
@@ -408,7 +408,7 @@ export default function HomePage() {
                   className="inline-flex items-center justify-center gap-2 text-white px-8 py-4 rounded-full text-lg font-bold shadow-2xl transition-all hover:scale-105 animate-glow"
                   style={{ background: 'linear-gradient(135deg,#F48C06,#E85D04)' }}
                 >
-                  🚩 ₹11 में ट्रायल शुरू करें
+                  🚩 ₹349 में 1 साल एक्सेस लें
                 </Link>
                 <Link
                   href="#manokamna"
@@ -449,7 +449,7 @@ export default function HomePage() {
             { num: '50,000+', label: 'भक्त जुड़े' },
             { num: '40 दिन', label: 'की साधना' },
             { num: '9 तरह', label: 'की मनोकामनाएं' },
-            { num: '₹11', label: 'से शुरू' },
+            { num: '₹199', label: 'से शुरू' },
           ].map((s) => (
             <div key={s.label} className="text-center px-4 py-2">
               <div className="text-xl md:text-2xl font-bold text-orange-600">
@@ -541,7 +541,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-105"
               style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
             >
-              🙏 अपनी मनोकामना पूरी करें — ₹11 में ट्रायल शुरू करें
+              🙏 अपनी मनोकामना पूरी करें — ₹349 में 1 साल एक्सेस लें
             </Link>
           </div>
         </div>
@@ -778,29 +778,32 @@ export default function HomePage() {
               <p className="font-devanagari text-yellow-300 text-xl font-bold mb-2 relative z-10">
                 ॥ साधना पैकेज ॥
               </p>
+              <span className="inline-block text-[10px] font-bold px-3 py-1 rounded-full text-white mb-2 relative z-10" style={{ background: '#E85D04' }}>
+                सबसे लोकप्रिय
+              </span>
               <div className="flex items-end justify-center gap-1 relative z-10">
                 <span className="text-orange-300 text-2xl font-bold mb-1">
                   ₹
                 </span>
                 <span className="text-white text-7xl font-bold leading-none">
-                  11
+                  349
                 </span>
               </div>
               <p className="text-orange-300 text-sm mt-1 relative z-10">
-                3-दिन ट्रायल — बिना किसी जोखिम के शुरू करें
+                1 साल एक्सेस — पूरे साल जब चाहें साधना करें
               </p>
             </div>
             <div className="bg-white p-8">
               <div className="grid grid-cols-2 gap-3 mb-7">
                 {[
-                  '3 दिन की हनुमान स्तुति',
+                  'पूरी 40 दिन की हनुमान स्तुति',
                   'रोज़ का प्रगति ट्रैकर',
                   'मोबाइल पर कहीं भी',
                   'तुरंत एक्सेस',
                   '9 तरह की मनोकामना',
-                  'जब चाहें अपग्रेड करें',
+                  '1 साल तक वैध',
                   '40-दिन प्लान ₹199 में',
-                  'Lifetime प्लान ₹349 में',
+                  'Lifetime प्लान ₹499 में',
                 ].map((f) => (
                   <div key={f} className="flex items-center gap-2">
                     <span
@@ -824,7 +827,7 @@ export default function HomePage() {
                   background: 'linear-gradient(135deg,#E85D04,#F48C06)',
                 }}
               >
-                🚩 अभी ₹11 में ट्रायल शुरू करें
+                🚩 अभी ₹349 में 1 साल एक्सेस लें
               </Link>
               <p className="text-center text-xs text-amber-500 mt-3">
                 🔒 100% सुरक्षित भुगतान • UPI, Card, Netbanking
@@ -960,7 +963,7 @@ export default function HomePage() {
             href="/login"
             className="inline-flex items-center gap-3 bg-white text-orange-700 px-10 py-4 rounded-full text-xl font-bold shadow-2xl hover:shadow-orange-500/30 transition-all hover:scale-105"
           >
-            🚩 ₹11 में ट्रायल शुरू करें
+            🚩 ₹349 में 1 साल एक्सेस लें
           </Link>
           <p className="text-orange-300 text-sm mt-6">
             🔒 सुरक्षित भुगतान &nbsp;•&nbsp; ⚡ तुरंत एक्सेस &nbsp;•&nbsp; 📱

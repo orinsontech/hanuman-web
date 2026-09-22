@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { dayLimitFor, uiDayLimitFor, PLANS, PlanId } from '@/lib/plans';
+import { dayLimitFor, uiDayLimitFor, isPlanExpired, PLANS, PlanId } from '@/lib/plans';
 
-interface User { id: number; phone: string; name: string | null; is_paid: boolean; plan: PlanId | null }
+interface User { id: number; phone: string; name: string | null; is_paid: boolean; plan: PlanId | null; plan_expires_at: string | null }
 interface Progress { day_number: number; completed_at: string }
 
 const COOLDOWN_MS = 12 * 60 * 60 * 1000;
@@ -125,7 +125,7 @@ export default function DashboardPage() {
       .then((r) => { if (r.status === 401) { router.push('/login'); return null; } return r.json(); })
       .then((data) => {
         if (!data) return;
-        if (!data.user?.is_paid) { router.replace('/payment'); return; }
+        if (!data.user?.is_paid || isPlanExpired(data.user?.plan_expires_at)) { router.replace('/payment'); return; }
         setUser(data.user);
         setProgress(data.progress);
       });

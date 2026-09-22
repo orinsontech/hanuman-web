@@ -20,6 +20,12 @@ export async function migrate() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS plan VARCHAR(10)
   `);
 
+  // NULL = plan never expires (full/lifetime/legacy trial). Only time-limited
+  // plans (e.g. yearly) get a real timestamp here.
+  await query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMP
+  `);
+
   // Grandfather pre-existing paid users (from before per-plan pricing) into the full 40-day plan
   await query(`
     UPDATE users SET plan='full' WHERE is_paid=TRUE AND plan IS NULL

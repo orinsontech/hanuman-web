@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { PlanId } from '@/lib/plans';
 
-interface UserRow { id: number; phone: string; name: string | null; is_paid: boolean; created_at: string }
+interface UserRow {
+  id: number;
+  phone: string;
+  name: string | null;
+  is_paid: boolean;
+  created_at: string;
+  plan: PlanId | null;
+  plan_expires_at: string | null;
+}
 interface ProgressRow { day_number: number; completed_at: string }
 
 export async function GET() {
