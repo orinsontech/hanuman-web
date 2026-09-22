@@ -24,7 +24,7 @@ export default function TermsPage() {
       <section>
         <h2 className="font-bold text-orange-900 text-base mb-2">2. प्लान और भुगतान</h2>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong>3-दिन ट्रायल — ₹189:</strong> पहले 3 दिन की स्तुति तक पहुंच</li>
+          <li><strong>3-दिन ट्रायल — ₹11:</strong> पहले 3 दिन की स्तुति तक पहुंच</li>
           <li><strong>40-दिन साधना — ₹299:</strong> पूरे 40 दिन की स्तुति तक एक बार पहुंच</li>
           <li><strong>Lifetime — ₹499:</strong> पूरे 40 दिन तक जीवनभर पहुंच, पूरा होने पर दोबारा शुरू करने की सुविधा</li>
         </ul>
