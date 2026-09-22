@@ -26,8 +26,8 @@ export const PLANS: Record<PlanId, Plan> = {
     id: 'full',
     label: '40-दिन साधना',
     tagline: 'पूरी 40 दिन की साधना, एक बार',
-    priceRupees: 299,
-    pricePaise: 29900,
+    priceRupees: 199,
+    pricePaise: 19900,
     // 42 = 40 marketed days + 2 hidden buffer/makeup days. UI and the
     // certificate threshold (CERTIFICATE_DAYS) stay at 40 — see uiDayLimitFor.
     dayLimit: 42,
@@ -37,8 +37,8 @@ export const PLANS: Record<PlanId, Plan> = {
     id: 'lifetime',
     label: 'Lifetime',
     tagline: 'जीवनभर पहुंच + जितनी बार चाहें दोहराएं',
-    priceRupees: 499,
-    pricePaise: 49900,
+    priceRupees: 349,
+    pricePaise: 34900,
     dayLimit: 42,
     canRestart: true,
   },
