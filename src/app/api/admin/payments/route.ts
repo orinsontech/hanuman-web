@@ -37,13 +37,16 @@ export async function GET(req: NextRequest) {
     params.push(status);
     conditions.push(`p.status = $${params.length}`);
   }
+  // created_at is stored as UTC wall-clock time, but From/To are IST calendar
+  // dates picked by the admin — convert each row to IST before comparing, or
+  // a date near midnight IST lands on the wrong side of the boundary.
   if (from) {
     params.push(from);
-    conditions.push(`p.created_at >= $${params.length}::date`);
+    conditions.push(`(p.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= $${params.length}::date`);
   }
   if (to) {
     params.push(to);
-    conditions.push(`p.created_at < ($${params.length}::date + interval '1 day')`);
+    conditions.push(`(p.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') < ($${params.length}::date + interval '1 day')`);
   }
   if (phone) {
     params.push(`%${phone}%`);
@@ -75,7 +78,8 @@ export async function GET(req: NextRequest) {
   const todayRevenue = await query<{ total: string }>(
     `SELECT COALESCE(SUM(amount), 0)::text AS total
      FROM payments
-     WHERE status = 'success' AND created_at >= CURRENT_DATE`
+     WHERE status = 'success'
+       AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date`
   );
 
   return NextResponse.json({ payments, summary, todayRevenue: todayRevenue[0]?.total ?? '0' });
