@@ -7,6 +7,7 @@ import Script from 'next/script';
 import { trackPixelEvent } from '@/lib/fbq';
 import { trackGtagEvent } from '@/lib/gtag';
 import { PLAN_ORDER, PLANS, PlanId, planRank, isPlanExpired, DEFAULT_PLAN } from '@/lib/plans';
+import { isTester } from '@/lib/testers';
 
 interface User { name: string | null; phone: string; is_paid: boolean; plan: PlanId | null; plan_expires_at: string | null }
 
@@ -40,7 +41,7 @@ export default function PaymentPage() {
     fetch('/api/auth/me').then(async (r) => {
       if (r.status === 401) { router.push('/login'); return; }
       const data = await r.json();
-      if (data.user?.plan === 'lifetime') { router.replace('/dashboard'); return; }
+      if (data.user?.plan === 'lifetime' || isTester(data.user?.phone)) { router.replace('/dashboard'); return; }
       setUser(data.user);
       const expired = isPlanExpired(data.user?.plan_expires_at);
       const availablePlans = PLAN_ORDER.filter(

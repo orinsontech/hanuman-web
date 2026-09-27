@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { dayLimitFor, isPlanExpired, PlanId } from '@/lib/plans';
+import { isTester } from '@/lib/testers';
 
 interface ProgressRow { day_number: number }
 interface UserRow { is_paid: boolean; plan: PlanId | null; plan_expires_at: string | null }
@@ -16,11 +17,14 @@ export async function POST(req: NextRequest) {
   }
 
   const users = await query<UserRow>(`SELECT is_paid, plan, plan_expires_at FROM users WHERE id=$1`, [session.userId]);
-  if (!users.length || !users[0].is_paid || isPlanExpired(users[0].plan_expires_at)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  if (day > dayLimitFor(users[0].plan)) {
-    return NextResponse.json({ error: 'यह दिन आपके प्लान में शामिल नहीं है' }, { status: 403 });
+  if (!users.length) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!isTester(session.phone)) {
+    if (!users[0].is_paid || isPlanExpired(users[0].plan_expires_at)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (day > dayLimitFor(users[0].plan)) {
+      return NextResponse.json({ error: 'यह दिन आपके प्लान में शामिल नहीं है' }, { status: 403 });
+    }
   }
 
   const existing = await query<ProgressRow>(

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { dayLimitFor, uiDayLimitFor, isPlanExpired, PLANS, PlanId } from '@/lib/plans';
+import stutiData from '@/data/hanuman_40_day_stuti.json';
+import { isTester } from '@/lib/testers';
 
 interface User { id: number; phone: string; name: string | null; is_paid: boolean; plan: PlanId | null; plan_expires_at: string | null }
 interface Progress { day_number: number; completed_at: string }
@@ -99,7 +101,7 @@ function SankalpNiyam() {
       </p>
       <audio
         ref={audioRef}
-        src="/audio/sankalp_ka_nam_jane.mp3"
+        src={stutiData.sankalp.src}
         onTimeUpdate={() => {
           if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
         }}
@@ -125,7 +127,7 @@ export default function DashboardPage() {
       .then((r) => { if (r.status === 401) { router.push('/login'); return null; } return r.json(); })
       .then((data) => {
         if (!data) return;
-        if (!data.user?.is_paid || isPlanExpired(data.user?.plan_expires_at)) { router.replace('/payment'); return; }
+        if (!isTester(data.user?.phone) && (!data.user?.is_paid || isPlanExpired(data.user?.plan_expires_at))) { router.replace('/payment'); return; }
         setUser(data.user);
         setProgress(data.progress);
       });
@@ -164,10 +166,11 @@ export default function DashboardPage() {
     );
   }
 
-  const dayLimit = dayLimitFor(user?.plan);
+  const tester = isTester(user?.phone);
+  const dayLimit = tester ? 40 : dayLimitFor(user?.plan);
   // UI-facing limit: caps the marketed/visible day count at 40 even for plans
   // whose real dayLimit allows a couple of hidden buffer days beyond that.
-  const uiDayLimit = uiDayLimitFor(user?.plan);
+  const uiDayLimit = tester ? 40 : uiDayLimitFor(user?.plan);
   const completedMap = new Map(progress.map((p) => [p.day_number, p.completed_at]));
   const completedDays = new Set(completedMap.keys());
   const totalCompleted = completedDays.size;
@@ -179,7 +182,7 @@ export default function DashboardPage() {
 
   const prevCompletedAt = nextDay && nextDay > 1 ? completedMap.get(nextDay - 1) : null;
   const unlockAt = prevCompletedAt ? new Date(prevCompletedAt).getTime() + COOLDOWN_MS : 0;
-  const isNextDayLocked = !!nextDay && unlockAt > now;
+  const isNextDayLocked = !tester && !!nextDay && unlockAt > now;
   const msRemaining = Math.max(0, unlockAt - now);
   const hoursRemaining = Math.floor(msRemaining / 3600000);
   const minutesRemaining = Math.floor((msRemaining % 3600000) / 60000);
@@ -307,7 +310,7 @@ export default function DashboardPage() {
               const done = completedDays.has(day);
               const isNext = day === nextDay;
               const beyondPlan = day > dayLimit;
-              const locked = !done && (!isNext || isNextDayLocked || beyondPlan);
+              const locked = !tester && !done && (!isNext || isNextDayLocked || beyondPlan);
 
               const cell = (
                 <>

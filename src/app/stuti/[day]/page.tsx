@@ -4,93 +4,31 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { dayLimitFor, isPlanExpired, PlanId } from '@/lib/plans';
+import stutiData from '@/data/hanuman_40_day_stuti.json';
+import { isTester } from '@/lib/testers';
 
-const VERSES = [
-  'श्रीगुरु चरन सरोज रज, निज मनु मुकुरु सुधारि। बरनउँ रघुबर बिमल जसु, जो दायकु फल चारि॥',
-  'बुद्धिहीन तनु जानिके, सुमिरौं पवन-कुमार। बल बुद्धि विद्या देहु मोहिं, हरहु कलेस बिकार॥',
-  'जय हनुमान ज्ञान गुन सागर। जय कपीस तिहुँ लोक उजागर॥',
-  'राम दूत अतुलित बल धामा। अंजनि-पुत्र पवनसुत नामा॥',
-  'महाबीर बिक्रम बजरंगी। कुमति निवार सुमति के संगी॥',
-  'कंचन बरन बिराज सुबेसा। कानन कुंडल कुंचित केसा॥',
-  'हाथ बज्र औ ध्वजा बिराजे। काँधे मूँज जनेउ साजे॥',
-  'शंकर सुवन केसरीनंदन। तेज प्रताप महा जग बंदन॥',
-  'विद्यावान गुनी अति चातुर। राम काज करिबे को आतुर॥',
-  'प्रभु चरित्र सुनिबे को रसिया। राम लखन सीता मन बसिया॥',
-  'सूक्ष्म रूप धरि सियहिं दिखावा। बिकट रूप धरि लंक जरावा॥',
-  'भीम रूप धरि असुर सँहारे। रामचंद्र के काज सँवारे॥',
-  'लाय सजीवन लखन जियाये। श्रीरघुबीर हरषि उर लाये॥',
-  'रघुपति कीन्ही बहुत बड़ाई। तुम मम प्रिय भरतहि सम भाई॥',
-  'सहस बदन तुम्हरो जस गावैं। अस कहि श्रीपति कंठ लगावैं॥',
-  'सनकादिक ब्रह्मादि मुनीसा। नारद सारद सहित अहीसा॥',
-  'जम कुबेर दिगपाल जहाँ ते। कबि कोबिद कहि सके कहाँ ते॥',
-  'तुम उपकार सुग्रीवहिं कीन्हा। राम मिलाय राज पद दीन्हा॥',
-  'तुम्हरो मंत्र बिभीषन माना। लंकेश्वर भए सब जग जाना॥',
-  'जुग सहस्र जोजन पर भानु। लील्यो ताहि मधुर फल जानू॥',
-  'प्रभु मुद्रिका मेलि मुख माहीं। जलधि लांघि गये अचरज नाहीं॥',
-  'दुर्गम काज जगत के जेते। सुगम अनुग्रह तुम्हरे तेते॥',
-  'राम दुआरे तुम रखवारे। होत न आज्ञा बिनु पैसारे॥',
-  'सब सुख लहै तुम्हारी सरना। तुम रक्षक काहू को डर ना॥',
-  'आपन तेज सम्हारो आपै। तीनों लोक हाँक तें काँपै॥',
-  'भूत पिशाच निकट नहिं आवै। महाबीर जब नाम सुनावै॥',
-  'नासै रोग हरै सब पीरा। जपत निरंतर हनुमत बीरा॥',
-  'संकट तें हनुमान छुड़ावै। मन क्रम बचन ध्यान जो लावै॥',
-  'सब पर राम तपस्वी राजा। तिन के काज सकल तुम साजा॥',
-  'और मनोरथ जो कोई लावै। सोइ अमित जीवन फल पावै॥',
-  'चारों जुग परताप तुम्हारा। है परसिद्ध जगत उजियारा॥',
-  'साधु संत के तुम रखवारे। असुर निकंदन राम दुलारे॥',
-  'अष्ट सिद्धि नौ निधि के दाता। अस बर दीन जानकी माता॥',
-  'राम रसायन तुम्हरे पासा। सदा रहो रघुपति के दासा॥',
-  'तुम्हरे भजन राम को पावै। जनम जनम के दुख बिसरावै॥',
-  'अंतकाल रघुबर पुर जाई। जहाँ जन्म हरिभक्त कहाई॥',
-  'और देवता चित्त न धरई। हनुमत सेइ सर्ब सुख करई॥',
-  'संकट कटै मिटै सब पीरा। जो सुमिरै हनुमत बलबीरा॥',
-  'जय जय जय हनुमान गोसाईं। कृपा करहु गुरुदेव की नाईं॥',
-  'जो सत बार पाठ कर कोई। छूटहि बंदि महा सुख होई॥',
-  'जो यह पढ़े हनुमान चालीसा। होय सिद्धि साखी गौरीसा॥',
-  'तुलसीदास सदा हरि चेरा। कीजै नाथ हृदय महँ डेरा॥',
-  'पवनतनय संकट हरन, मंगल मूरति रूप। राम लखन सीता सहित, हृदय बसहु सुर भूप॥',
-];
+// Saare audio aur lyrics is JSON se aate hain — naya audio/lyric jodna ho to sirf JSON badlo
+type Track = { src: string; label: string; lyrics: string | null };
+type LyricLine = { time: number; text: string };
+type StutiDay = { day: number; pre: Track[]; main: Track; post: Track[] };
 
-// Start second (in the audio) for each verse above, confirmed one-by-one. Extend as more are given.
-const VERSE_TIMES = [
-  0, 23, 49, 65, 78, 92, 103, 114, 125, 140, 151, 161, 177, 188, 198, 210, 220,
-  235, 245, 257, 268, 283, 294, 305, 316, 331, 341, 352, 363, 379, 390, 400,
-  412, 426, 437, 447, 459, 474, 484, 495, 505, 521, 539,
-];
+const DAYS = stutiData.days as StutiDay[];
+const LYRICS = stutiData.lyrics as Record<string, LyricLine[]>;
 
-function getVerseIndex(t: number) {
-  let idx = 0;
-  for (let i = 0; i < VERSE_TIMES.length; i++) {
-    if (t >= VERSE_TIMES[i]) idx = i;
+// Track ke lyrics me se wo line jo time t par chal rahi hai
+function getLyricLine(track: Track, t: number) {
+  const lines = track.lyrics ? LYRICS[track.lyrics] : undefined;
+  if (!lines?.length) return null;
+  let text = lines[0].text;
+  for (const line of lines) {
+    if (t >= line.time) text = line.text;
   }
-  return idx;
+  return text;
 }
 
-// Din jiske liye pre_audio/day_N.mp3 rakha gaya hai — naye din ki recording aane par yahan number jod dena
-const PRE_AUDIO_DAYS = new Set([1, 2, 3]);
-
-const CHALISA_TRACK = { src: '/audio/hanuman-chalisa.mp3', label: 'हनुमान चालीसा' };
-
-// Pehle pre_audio ke baad din-vishesh jo doosra pre-audio sunaana hai
-const PRE_AUDIO_EXTRA: Record<number, { src: string; label: string }> = {
-  1: { src: '/audio/pre_audio/day_1_second.mp3', label: '180 बार श्री राम नाम जप' },
-};
-
-// Chalisa ke baad din-vishesh jo extra stuti sunaani hai
-const POST_AUDIO: Record<number, { src: string; label: string }> = {
-  2: { src: '/audio/hanuman_ashtak.mp3', label: 'हनुमान अष्टक' },
-  3: { src: '/audio/hanuman_ban.mp3', label: 'हनुमान बाण' },
-};
-
 function buildPlaylist(day: number) {
-  const tracks: { src: string; label: string }[] = [];
-  if (PRE_AUDIO_DAYS.has(day)) {
-    tracks.push({ src: `/audio/pre_audio/day_${day}.mp3`, label: 'प्रारंभिक मार्गदर्शन एवं संकल्प विधि' });
-  }
-  if (PRE_AUDIO_EXTRA[day]) tracks.push(PRE_AUDIO_EXTRA[day]);
-  tracks.push(CHALISA_TRACK);
-  if (POST_AUDIO[day]) tracks.push(POST_AUDIO[day]);
-  return tracks;
+  const entry = DAYS.find((d) => d.day === day) ?? DAYS[0];
+  return { tracks: [...entry.pre, entry.main, ...entry.post], mainIndex: entry.pre.length };
 }
 
 const COOLDOWN_MS = 12 * 60 * 60 * 1000;
@@ -111,10 +49,11 @@ function DayPractice({ day, alreadyDone }: { day: number; alreadyDone: boolean }
   const [marked, setMarked] = useState(false);
   const [marking, setMarking] = useState(false);
 
-  const playlist = useMemo(() => buildPlaylist(day), [day]);
+  const { tracks: playlist, mainIndex } = useMemo(() => buildPlaylist(day), [day]);
   const currentTrack = playlist[trackIndex] ?? playlist[0];
-  const isChalisaTrack = currentTrack.src === CHALISA_TRACK.src;
-  const verse = getVerseIndex(currentTime);
+  // Main track (chalisa) sunne par hi din complete ho sakta hai
+  const isMainTrack = trackIndex === mainIndex;
+  const lyricLine = getLyricLine(currentTrack, currentTime);
 
   // Track badalne par, agar pehle se play ho raha tha to agla track khud chalao
   useEffect(() => {
@@ -137,12 +76,12 @@ function DayPractice({ day, alreadyDone }: { day: number; alreadyDone: boolean }
     const audio = audioRef.current;
     if (!audio) return;
     setCurrentTime(audio.currentTime);
-    if (isChalisaTrack && !listened && audio.currentTime >= Math.min(30, audio.duration * 0.7))
+    if (isMainTrack && !listened && audio.currentTime >= Math.min(30, audio.duration * 0.7))
       setListened(true);
   }
 
   function handleTrackEnded() {
-    if (isChalisaTrack) setListened(true);
+    if (isMainTrack) setListened(true);
     if (trackIndex < playlist.length - 1) {
       setTrackIndex((i) => i + 1);
     } else {
@@ -190,7 +129,7 @@ function DayPractice({ day, alreadyDone }: { day: number; alreadyDone: boolean }
         }}
       >
         <p className="font-devanagari text-xl md:text-2xl font-medium leading-relaxed">
-          {isChalisaTrack ? VERSES[verse] : currentTrack.label}
+          {lyricLine ?? currentTrack.label}
         </p>
       </div>
 
@@ -359,6 +298,13 @@ export default function StutiPage() {
         return;
       }
       r.json().then((data) => {
+        // Tester ke liye koi bhi din seedhe khulta hai
+        if (isTester(data.user?.phone)) {
+          setAlreadyDone((data.progress || []).some((p: { day_number: number }) => p.day_number === day));
+          setAuthChecked(true);
+          return;
+        }
+
         if (!data.user?.is_paid || isPlanExpired(data.user?.plan_expires_at)) {
           router.replace('/payment');
           return;
