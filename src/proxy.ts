@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Routes that need login
-const NEEDS_LOGIN = ['/dashboard', '/stuti', '/certificate', '/payment'];
+const NEEDS_LOGIN = ['/dashboard', '/stuti', '/certificate', '/payment', '/thank-you'];
 // Routes only for guests (logged-out users)
 const GUEST_ONLY = ['/login'];
 
@@ -34,6 +34,7 @@ export const config = {
     '/stuti/:path*',
     '/certificate/:path*',
     '/payment/:path*',
+    '/thank-you',
     '/login',
     '/admin/:path*',
   ],

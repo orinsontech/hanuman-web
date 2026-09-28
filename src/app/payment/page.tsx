@@ -31,7 +31,6 @@ export default function PaymentPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [paid, setPaid] = useState(false);
   const [paying, setPaying] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [error, setError] = useState('');
@@ -129,8 +128,12 @@ export default function PaymentPage() {
             currency: 'INR',
             transaction_id: `purchase_${response.razorpay_payment_id}`,
           });
-          setPaid(true);
-          setPaying(false);
+          const thankYouParams = new URLSearchParams({
+            txn: response.razorpay_payment_id,
+            value: String(order.amount / 100),
+            plan: selectedPlan,
+          });
+          router.replace(`/thank-you?${thankYouParams}`);
         },
         modal: {
           ondismiss: () => setPaying(false),
@@ -230,23 +233,7 @@ export default function PaymentPage() {
                 </div>
               </div>
 
-              {paid ? (
-                <div className="text-center px-6 pb-6">
-                  <div className="text-5xl mb-4">🙏</div>
-                  <h3 className="font-bold text-white text-lg mb-2">भुगतान सफल हुआ!</h3>
-                  <p className="text-orange-200/80 text-sm leading-relaxed mb-5">
-                    आपकी साधना अकाउंट activate हो गया है। अब आप साधना शुरू कर सकते हैं।
-                  </p>
-                  <button
-                    onClick={() => router.replace('/dashboard')}
-                    className="w-full text-white py-3.5 rounded-xl font-bold text-sm shadow-lg transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg,#E85D04,#F48C06)' }}
-                  >
-                    साधना शुरू करें →
-                  </button>
-                </div>
-              ) : (
-                <>
+              <>
                   {/* Plan selector */}
                   {currentPlan && (
                     <p className="mx-6 mb-3 text-orange-200/70 text-xs">
@@ -323,8 +310,7 @@ export default function PaymentPage() {
                   <p className="text-center text-white/30 text-[10px] tracking-widest font-semibold pb-5">
                     🔒 सुरक्षित · Razorpay द्वारा संचालित · Powered by BhaktiAmrit
                   </p>
-                </>
-              )}
+              </>
             </div>
 
             <p className="text-center text-xs text-amber-500 mt-4 font-devanagari">
