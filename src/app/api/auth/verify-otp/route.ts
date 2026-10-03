@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { signToken, setSessionCookie } from '@/lib/auth';
 
-interface OtpRow { id: number; code: string; expires_at: string; used: boolean }
+interface OtpRow { id: number; message_id: string | null; expires_at: string; used: boolean }
 interface UserRow { id: number; phone: string }
 
 export async function POST(req: NextRequest) {
@@ -18,7 +18,21 @@ export async function POST(req: NextRequest) {
       [phone]
     );
 
-    if (!otps.length || otps[0].code !== code) {
+    if (!otps.length || !otps[0].message_id) {
+      return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 401 });
+    }
+
+    const verifyRes = await fetch('https://meraotp.in/api/v1/otp/verify', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.MERAOTP_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message_id: otps[0].message_id, otp: String(code) }),
+    });
+    const verifyData = await verifyRes.json().catch(() => ({}));
+
+    if (!verifyRes.ok || !verifyData.success || !verifyData.data?.verified) {
       return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 401 });
     }
 

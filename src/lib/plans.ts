@@ -97,6 +97,31 @@ export function isPlanExpired(expiresAt: string | Date | null | undefined): bool
   return new Date(expiresAt).getTime() < Date.now();
 }
 
+// Whether a user currently on `current` (expiring at `expiresAt`) may buy
+// `target`. Higher-ranked plans are upgrades; the same plan is a renewal only
+// once expired. 'full' → 'yearly' is blocked: full never expires, so it would
+// trade permanent access for a 365-day one.
+export function canPurchase(
+  target: PlanId,
+  current: PlanId | null | undefined,
+  expiresAt: string | Date | null | undefined
+): boolean {
+  if (current === 'full' && target === 'yearly') return false;
+  return planRank(target) > planRank(current) || (target === current && isPlanExpired(expiresAt));
+}
+
+// Price in paise for buying `target`. Upgrade credit (the current plan's
+// price) only applies while the current plan is still active — an expired
+// plan has already been fully used, so it earns no discount.
+export function purchasePricePaise(
+  target: PlanId,
+  current: PlanId | null | undefined,
+  expiresAt: string | Date | null | undefined
+): number {
+  if (!current || isPlanExpired(expiresAt)) return PLANS[target].pricePaise;
+  return PLANS[target].pricePaise - PLANS[current].pricePaise;
+}
+
 // Builds a `CASE column WHEN 'id' THEN rank ... END` SQL fragment from
 // PLAN_ORDER, so the two payment routes never hand-duplicate this map again.
 // Plans retired from PLAN_ORDER (e.g. 'trial') fall through to their

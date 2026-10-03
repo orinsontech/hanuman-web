@@ -42,6 +42,10 @@ export async function migrate() {
     )
   `);
 
+  // MeraOTP now generates the OTP itself; we only keep its message_id for verification
+  await query(`ALTER TABLE otp_codes ADD COLUMN IF NOT EXISTS message_id VARCHAR(64)`);
+  await query(`ALTER TABLE otp_codes ALTER COLUMN code DROP NOT NULL`);
+
   await query(`
     CREATE TABLE IF NOT EXISTS payments (
       id SERIAL PRIMARY KEY,

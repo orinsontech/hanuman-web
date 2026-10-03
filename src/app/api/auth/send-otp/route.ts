@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { migrate } from '@/lib/migrate';
@@ -11,31 +12,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 });
     }
 
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-    await query(
-      `INSERT INTO otp_codes (phone, code, expires_at) VALUES ($1, $2, $3)`,
-      [phone, code, expiresAt]
-    );
-
-    const smsRes = await fetch('https://meraotp.in/api/sendSMS', {
+    const smsRes = await fetch('https://meraotp.in/api/v1/otp/send', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${process.env.MERAOTP_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': `login_${phone}_${randomUUID()}`,
+      },
       body: JSON.stringify({
-        apiKey: process.env.MERAOTP_API_KEY,
-        mobileNo: phone,
-        messageType: 'AUTH_OTP',
-        brandName: process.env.MERAOTP_BRAND_NAME,
-        otp: code,
-        senderId: process.env.MERAOTP_SENDER_ID || 'MRAOTP',
+        mobile: phone,
+        purpose: 'login',
+        otp_length: 6,
+        reference: `login_${phone}`,
       }),
     });
-    const smsData = await smsRes.json();
+    const smsData = await smsRes.json().catch(() => ({}));
+    const messageId: string | undefined = smsData?.data?.message_id;
 
-    if (!smsRes.ok || !smsData.success) {
+    if (!smsRes.ok || !smsData.success || !messageId) {
+      console.error('MeraOTP send failed', smsRes.status, smsData);
       return NextResponse.json({ error: 'Failed to send OTP' }, { status: 502 });
     }
+
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await query(
+      `INSERT INTO otp_codes (phone, message_id, expires_at) VALUES ($1, $2, $3)`,
+      [phone, messageId, expiresAt]
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {

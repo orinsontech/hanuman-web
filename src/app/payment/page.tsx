@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Script from 'next/script';
 import { trackPixelEvent } from '@/lib/fbq';
 import { trackGtagEvent } from '@/lib/gtag';
-import { PLAN_ORDER, PLANS, PlanId, planRank, isPlanExpired, DEFAULT_PLAN } from '@/lib/plans';
+import { PLAN_ORDER, PLANS, PlanId, isPlanExpired, canPurchase, purchasePricePaise, DEFAULT_PLAN } from '@/lib/plans';
 import { isTester } from '@/lib/testers';
 
 interface User { name: string | null; phone: string; is_paid: boolean; plan: PlanId | null; plan_expires_at: string | null }
@@ -42,10 +42,7 @@ export default function PaymentPage() {
       const data = await r.json();
       if (data.user?.plan === 'lifetime' || isTester(data.user?.phone)) { router.replace('/dashboard'); return; }
       setUser(data.user);
-      const expired = isPlanExpired(data.user?.plan_expires_at);
-      const availablePlans = PLAN_ORDER.filter(
-        (id) => planRank(id) > planRank(data.user?.plan) || (id === data.user?.plan && expired)
-      );
+      const availablePlans = PLAN_ORDER.filter((id) => canPurchase(id, data.user?.plan, data.user?.plan_expires_at));
       setSelectedPlan(availablePlans.includes(DEFAULT_PLAN) ? DEFAULT_PLAN : availablePlans[0]);
       setLoading(false);
     });
@@ -61,10 +58,8 @@ export default function PaymentPage() {
 
   const currentPlan = user.plan;
   const currentPlanExpired = isPlanExpired(user.plan_expires_at);
-  const isRenewal = (id: PlanId) => id === currentPlan && currentPlanExpired;
-  const availablePlans = PLAN_ORDER.filter((id) => planRank(id) > planRank(currentPlan) || isRenewal(id));
-  const priceFor = (id: PlanId) =>
-    currentPlan && !isRenewal(id) ? PLANS[id].pricePaise - PLANS[currentPlan].pricePaise : PLANS[id].pricePaise;
+  const availablePlans = PLAN_ORDER.filter((id) => canPurchase(id, currentPlan, user.plan_expires_at));
+  const priceFor = (id: PlanId) => purchasePricePaise(id, currentPlan, user.plan_expires_at);
 
   async function handleChangeDetails() {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -274,7 +269,7 @@ export default function PaymentPage() {
                             </div>
                             <div className="text-right flex-shrink-0">
                               <p className="text-white font-bold text-xl leading-none">₹{price / 100}</p>
-                              {currentPlan && !isRenewal(id) && <p className="text-orange-200/50 text-[10px] mt-1">अपग्रेड मूल्य</p>}
+                              {price !== plan.pricePaise && <p className="text-orange-200/50 text-[10px] mt-1">अपग्रेड मूल्य</p>}
                             </div>
                           </div>
                         </button>
